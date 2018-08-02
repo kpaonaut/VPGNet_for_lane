@@ -1,0 +1,6 @@
+caffe/build/
+caffe/models/vpgnet-novp/output/
+caffe/models/vpgnet-novp/LMDB_test/data.mdb
+caffe/models/vpgnet-novp/LMDB_train/data.mdb
+caffe/.build_release
+caffe/.build_release/lib/libcaffe.a

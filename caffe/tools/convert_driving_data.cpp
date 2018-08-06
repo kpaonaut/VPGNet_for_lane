@@ -145,9 +145,9 @@ int main(int argc, char** argv) {
   LOG(ERROR) << "Total to be processed: " << lines.size() << ".\n";
   for (int line_id = 0; line_id < lines.size(); ++line_id) {
     DrivingData data;
-    const string image_path = root_folder + lines[line_id].first;
+    const string image_path = root_folder + lines[line_id].first; // filename
     data.set_car_img_source(image_path);
-    const vector<CarBoundingBox>& bbs = lines[line_id].second;
+    const vector<CarBoundingBox>& bbs = lines[line_id].second; // boxes
     for (int i = 0; i < bbs.size(); i ++) {
       CarBoundingBox *box = data.add_car_boxes();
       box->CopyFrom(bbs[i]);

@@ -3,9 +3,9 @@ import string
 
 def color_options(x):
 	return {
-		1: (0, 255, 0),
-		2: (255, 0, 0),
-		3: (0, 0, 255),
+		1: (0, 255, 0), # green color
+		2: (255, 0, 0), # blue
+		3: (0, 0, 255), # red
 	}[x]
 
 def main():

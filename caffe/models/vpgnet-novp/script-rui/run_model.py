@@ -27,14 +27,14 @@ transformer.set_transpose('data', (2, 0, 1))  # move image channels to outermost
 transformer.set_raw_scale('data', 255)      # rescale from [0, 1] to [0, 255]
 transformed_img = transformer.preprocess('data', img)
 # print transformed_img
-# swap R, B channel
+# swap R, B channel, the final input to the network should be RGB
 tmp = np.copy(transformed_img[0])
 transformed_img[0] = transformed_img[2]
 transformed_img[2] = tmp
 
 net.blobs['data'].data[...] = [transformed_img]
 t1 = time.time()
-for i in range(100):
+for i in range(1):
     net.forward()
 print "forward propagation time: ", time.time() - t1
 
@@ -53,6 +53,8 @@ obj_mask = net.blobs['binary-mask'].data
 print obj_mask.shape
 print transformed_img.shape
 
+masked_img = img.copy()
+mask_grid_size = img.shape[0] / obj_mask.shape[2]
 tot = 0
 for i in range(120):
     for j in range(160):
@@ -61,6 +63,7 @@ for i in range(120):
             tot += 1
         else:
             obj_mask[0, 0, i, j] = 0
+            masked_img[i*mask_grid_size : (i+1)*mask_grid_size + 1, j*mask_grid_size : (j+1)*mask_grid_size + 1] = (255, 255, 255) # mask with white block
         if obj_mask[0, 1, i, j] > 0.5:
             obj_mask[0, 1, i, j] = 255
             tot += 1
@@ -69,6 +72,7 @@ for i in range(120):
 # print tot
 cv2.imwrite('mask0.png', obj_mask[0, 0, ...])
 cv2.imwrite('mask1.png', obj_mask[0, 1, ...])
+cv2.imwrite('masked.png', masked_img)
 
 classification = net.blobs['multi-label'].data
 # print classification.shape

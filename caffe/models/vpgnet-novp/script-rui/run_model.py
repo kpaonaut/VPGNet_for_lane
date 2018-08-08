@@ -6,7 +6,7 @@ import time # time the execution time
 import caffe
 import cv2
 
-model = '/home/rui/VPGNet/caffe/models/vpgnet-novp/deploy.prototxt'
+model = '/home/rui/VPGNet/caffe/models/vpgnet-novp/deploy_Rui.prototxt' # deploy_Rui: pruned useless branches
 pretrained = '/home/rui/VPGNet/caffe/models/vpgnet-novp/snapshots/split_iter_100000.caffemodel'
 
 caffe.set_mode_gpu()
@@ -32,10 +32,12 @@ tmp = np.copy(transformed_img[0])
 transformed_img[0] = transformed_img[2]
 transformed_img[2] = tmp
 
-net.blobs['data'].data[...] = [transformed_img]
+net.blobs['data'].data[...] = transformed_img
 t1 = time.time()
-for i in range(1):
+for i in range(100):
     net.forward()
+    # for j in range(1000000): # mimic post process
+    #     pass
 print "forward propagation time: ", time.time() - t1
 
 dt = time.time() - t
@@ -47,36 +49,32 @@ for i in range(3):
         for k in range(transformed_img.shape[2]):
             img[j, k, i] = transformed_img[i, j, k]
 cv2.imwrite("example_imported.png", img)
-# print net.blobs['binary-mask'].data
 
-obj_mask = net.blobs['binary-mask'].data
-print obj_mask.shape
-print transformed_img.shape
+# obj_mask = net.blobs['binary-mask'].data
+# print obj_mask.shape
+# print transformed_img.shape
 
-masked_img = img.copy()
-mask_grid_size = img.shape[0] / obj_mask.shape[2]
-tot = 0
-for i in range(120):
-    for j in range(160):
-        if obj_mask[0, 0, i, j] > 0.5:
-            obj_mask[0, 0, i, j] = 255
-            tot += 1
-        else:
-            obj_mask[0, 0, i, j] = 0
-            masked_img[i*mask_grid_size : (i+1)*mask_grid_size + 1, j*mask_grid_size : (j+1)*mask_grid_size + 1] = (255, 255, 255) # mask with white block
-        if obj_mask[0, 1, i, j] > 0.5:
-            obj_mask[0, 1, i, j] = 255
-            tot += 1
-        else:
-            obj_mask[0, 1, i, j] = 0
-# print tot
-cv2.imwrite('mask0.png', obj_mask[0, 0, ...])
-cv2.imwrite('mask1.png', obj_mask[0, 1, ...])
-cv2.imwrite('masked.png', masked_img)
+# masked_img = img.copy()
+# mask_grid_size = img.shape[0] / obj_mask.shape[2]
+# tot = 0
+# for i in range(120):
+#     for j in range(160):
+#         if obj_mask[0, 0, i, j] > 0.5:
+#             obj_mask[0, 0, i, j] = 255
+#             tot += 1
+#         else:
+#             obj_mask[0, 0, i, j] = 0
+#             masked_img[i*mask_grid_size : (i+1)*mask_grid_size + 1, j*mask_grid_size : (j+1)*mask_grid_size + 1] = (255, 255, 255) # mask with white block
+#         if obj_mask[0, 1, i, j] > 0.5:
+#             obj_mask[0, 1, i, j] = 255
+#             tot += 1
+#         else:
+#             obj_mask[0, 1, i, j] = 0
+# cv2.imwrite('mask0.png', obj_mask[0, 0, ...])
+# cv2.imwrite('mask1.png', obj_mask[0, 1, ...])
+# cv2.imwrite('masked.png', masked_img)
 
 classification = net.blobs['multi-label'].data
-# print classification.shape
-# print classification
 classes = []
 
 
@@ -109,7 +107,14 @@ for i in range(60):
 
 cv2.imwrite("example_classified.png", img) # ISSUE1: the image BGR channel VS RGB
 
-# print classes
-
-bb = net.blobs['bb-output-tiled'].data
-print bb.shape
+# bounding box visualization
+# bb = net.blobs['bb-output-tiled'].data
+# print bb.shape
+# bb_visualize0 = bb[0, 0, ...]*255
+# bb_visualize1 = bb[0, 1, ...]*255
+# bb_visualize2 = bb[0, 2, ...]*255
+# bb_visualize3 = bb[0, 3, ...]*255
+# cv2.imwrite('bb_visualize0.png', bb_visualize0)
+# cv2.imwrite('bb_visualize1.png', bb_visualize1)
+# cv2.imwrite('bb_visualize2.png', bb_visualize2)
+# cv2.imwrite('bb_visualize3.png', bb_visualize3)

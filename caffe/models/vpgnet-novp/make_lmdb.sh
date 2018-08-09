@@ -1,6 +1,6 @@
 # Declare $PATH_TO_DATASET_DIR and $PATH_TO_DATASET_LIST
-PATH_TO_DATASET_DIR="/home/rui/VPGNet/caltech-lanes-dataset/"
-PATH_TO_DATASET_LIST="/home/rui/VPGNet/caltech-lanes-dataset/cordova1.txt"
+PATH_TO_DATASET_DIR="/home/rui/VPGNet/caltech-lanes-dataset/train"
+PATH_TO_DATASET_LIST="/home/rui/VPGNet/caltech-lanes-dataset/train/combined_labels.txt"
 
 rm -rf LMDB_test
 rm -rf LMDB_train

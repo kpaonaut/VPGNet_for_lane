@@ -28,11 +28,14 @@ def main():
 
     cv2.imwrite('example.png', img)
 
-    img = cv2.imread('../train/cordova1/g00000.png')
+    img = cv2.imread('../train/washington2/g00128.png')
     f = open('../train/combined_labels.txt', 'r')
     tot = 0
     lines = f.readlines()
-    label1_string = lines[1]
+    for i, line in enumerate(lines):
+        if "washington2/g00128" in line:
+            break
+    label1_string = lines[i]
     labels = label1_string.split()
     i = 2
     while i < len(labels) - 1:

@@ -9,11 +9,15 @@ lmdb_env = lmdb.open(lmdb_file)
 lmdb_txn = lmdb_env.begin()
 lmdb_cursor = lmdb_txn.cursor()
 datum = caffe_pb2.Datum()
+tot = 0
 
 for key, value in lmdb_cursor:
     datum.ParseFromString(value)
-    print datum
-    break
+    # print datum
+    print key
+    tot += 1
+    if tot == 10:
+        break
 
     label = datum.label
     data = caffe.io.datum_to_array(datum)

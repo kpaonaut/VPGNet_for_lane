@@ -1,10 +1,17 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
+import os
 import time # time the execution time
 
 import caffe
 import cv2
+
+import shelve # store workspace
+
+workspace_root = 'workspace/4/'
+os.mkdir(workspace_root)
+shelf_file_handle = shelve.open(workspace_root + 'shelve.out', 'n')
 
 # model = '/home/rui/VPGNet/caffe/models/vpgnet-novp/deploy_Rui.prototxt' # deploy_Rui: pruned useless branches
 model = '/home/rui/VPGNet/caffe/models/vpgnet-novp/deploy.prototxt' # original deploy, no pruning
@@ -31,7 +38,7 @@ transformed_img = transformer.preprocess('data', img) # swap R, B channel, the f
 
 net.blobs['data'].data[...] = transformed_img
 t1 = time.time()
-for i in range(100):
+for i in range(1):
     net.forward()
     # for j in range(1000000): # mimic post process
     #     pass
@@ -45,31 +52,33 @@ for i in range(3):
     for j in range(transformed_img.shape[1]):
         for k in range(transformed_img.shape[2]):
             img[j, k, i] = transformed_img[i, j, k]
-cv2.imwrite("example_imported.png", img)
+cv2.imwrite(workspace_root + "example_imported.png", img)
 
-# obj_mask = net.blobs['binary-mask'].data
+obj_mask = net.blobs['binary-mask'].data
 # print obj_mask.shape
 # print transformed_img.shape
 
-# masked_img = img.copy()
-# mask_grid_size = img.shape[0] / obj_mask.shape[2]
-# tot = 0
-# for i in range(120):
-#     for j in range(160):
-#         if obj_mask[0, 0, i, j] > 0.5:
-#             obj_mask[0, 0, i, j] = 255
-#             tot += 1
-#         else:
-#             obj_mask[0, 0, i, j] = 0
-#             masked_img[i*mask_grid_size : (i+1)*mask_grid_size + 1, j*mask_grid_size : (j+1)*mask_grid_size + 1] = (255, 255, 255) # mask with white block
-#         if obj_mask[0, 1, i, j] > 0.5:
-#             obj_mask[0, 1, i, j] = 255
-#             tot += 1
-#         else:
-#             obj_mask[0, 1, i, j] = 0
-# cv2.imwrite('mask0.png', obj_mask[0, 0, ...])
-# cv2.imwrite('mask1.png', obj_mask[0, 1, ...])
-# cv2.imwrite('masked.png', masked_img)
+offset_mask = 4 # offset to align output with original pic: due to padding
+
+masked_img = img.copy()
+mask_grid_size = img.shape[0] / obj_mask.shape[2]
+tot = 0
+for i in range(120):
+    for j in range(160):
+        if obj_mask[0, 0, i, j] > 0.5:
+            obj_mask[0, 0, i, j] = 255
+            tot += 1
+        else:
+            obj_mask[0, 0, i, j] = 0
+            masked_img[i*mask_grid_size : (i+1)*mask_grid_size + 1, (j+offset_mask)*mask_grid_size : (j+offset_mask+1)*mask_grid_size + 1] = (255, 255, 255) # mask with white block
+        if obj_mask[0, 1, i, j] > 0.5:
+            obj_mask[0, 1, i, j] = 255
+            tot += 1
+        else:
+            obj_mask[0, 1, i, j] = 0
+cv2.imwrite(workspace_root + 'mask0.png', obj_mask[0, 0, ...])
+cv2.imwrite(workspace_root + 'mask1.png', obj_mask[0, 1, ...])
+cv2.imwrite(workspace_root + 'masked.png', masked_img)
 
 classification = net.blobs['multi-label'].data
 classes = []
@@ -85,6 +94,7 @@ def color_options(x):
     }[x]
 
 # visualize classification
+offset_class = 2 # offset for classification error
 grid_size = img.shape[0]/60
 for i in range(60):
     classes.append([])
@@ -97,12 +107,12 @@ for i in range(60):
                 maxi = k
         classes[i].append(maxi)
         if maxi != 0:
-            pt1 = (j*grid_size, i*grid_size)
-            pt2 = (j*grid_size+grid_size, i*grid_size+grid_size)
+            pt1 = ((j + offset_class)*grid_size, i*grid_size)
+            pt2 = ((j + offset_class)*grid_size+grid_size, i*grid_size+grid_size)
             # print maxi
             cv2.rectangle(img, pt1, pt2, color_options(maxi), 2)
 
-cv2.imwrite("example_classified.png", img) # ISSUE1: the image BGR channel VS RGB
+cv2.imwrite(workspace_root + "example_classified.png", img) # ISSUE1: the image BGR channel VS RGB
 
 # bounding box visualization
 # bb = net.blobs['bb-output-tiled'].data
@@ -115,3 +125,12 @@ cv2.imwrite("example_classified.png", img) # ISSUE1: the image BGR channel VS RG
 # cv2.imwrite('bb_visualize1.png', bb_visualize1)
 # cv2.imwrite('bb_visualize2.png', bb_visualize2)
 # cv2.imwrite('bb_visualize3.png', bb_visualize3)
+
+keys = ['classification', 'obj_mask', 'offset_class', 
+'mask_grid_size', 'img', 'max_value', 'offset_mask', 'grid_size', 'transformed_img', 
+'classes', 'masked_img']
+
+for key in keys:
+    print 'saving variable: ', key
+    shelf_file_handle[key] = globals()[key]
+shelf_file_handle.close()

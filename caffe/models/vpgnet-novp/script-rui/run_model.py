@@ -10,7 +10,8 @@ import cv2
 import shelve # store workspace
 
 workspace_root = 'workspace/4/'
-os.mkdir(workspace_root)
+if not os.path.exists(os.path.join(os.getcwd(), workspace_root)):
+    os.mkdir(workspace_root)
 shelf_file_handle = shelve.open(workspace_root + 'shelve.out', 'n')
 
 # model = '/home/rui/VPGNet/caffe/models/vpgnet-novp/deploy_Rui.prototxt' # deploy_Rui: pruned useless branches
@@ -25,7 +26,7 @@ net = caffe.Net(model, pretrained, caffe.TEST)
 # for name, blob in net.blobs.iteritems():
 #    print("{:<5}: {}".format(name, blob.data.shape))
 
-img = caffe.io.load_image('../example.png')
+img = caffe.io.load_image('example.png')
 
 print "Start timing!"
 t = time.time()
@@ -52,30 +53,42 @@ for i in range(3):
     for j in range(transformed_img.shape[1]):
         for k in range(transformed_img.shape[2]):
             img[j, k, i] = transformed_img[i, j, k]
-cv2.imwrite(workspace_root + "example_imported.png", img)
+cv2.imwrite(workspace_root + "example.png", img)
 
 obj_mask = net.blobs['binary-mask'].data
 # print obj_mask.shape
 # print transformed_img.shape
 
-offset_mask = 4 # offset to align output with original pic: due to padding
+x_offset_mask = 3 # offset to align output with original pic: due to padding
+y_offset_mask = 3
 
 masked_img = img.copy()
 mask_grid_size = img.shape[0] / obj_mask.shape[2]
 tot = 0
+# for i in range(120):
+#     for j in range(160):
+#         if obj_mask[0, 0, i, j] > 0.5:
+#             obj_mask[0, 0, i, j] = 255
+#             tot += 1
+#         else:
+#             obj_mask[0, 0, i, j] = 0
+#             masked_img[i*mask_grid_size : (i+1)*mask_grid_size + 1, (j+offset_mask)*mask_grid_size : (j+offset_mask+1)*mask_grid_size + 1] = (255, 255, 255) # mask with white block
+#         if obj_mask[0, 1, i, j] > 0.5:
+#             obj_mask[0, 1, i, j] = 255
+#             tot += 1
+#         else:
+#             obj_mask[0, 1, i, j] = 0
 for i in range(120):
     for j in range(160):
-        if obj_mask[0, 0, i, j] > 0.5:
-            obj_mask[0, 0, i, j] = 255
-            tot += 1
-        else:
-            obj_mask[0, 0, i, j] = 0
-            masked_img[i*mask_grid_size : (i+1)*mask_grid_size + 1, (j+offset_mask)*mask_grid_size : (j+offset_mask+1)*mask_grid_size + 1] = (255, 255, 255) # mask with white block
-        if obj_mask[0, 1, i, j] > 0.5:
-            obj_mask[0, 1, i, j] = 255
-            tot += 1
-        else:
-            obj_mask[0, 1, i, j] = 0
+        mapped_value =  int(obj_mask[0, 0, i, j] * 255)
+        obj_mask[0, 0, i, j] = mapped_value
+
+        mapped_value =  int(obj_mask[0, 1, i, j] * 255)
+        obj_mask[0, 1, i, j] = mapped_value
+        if mapped_value > 100:
+            masked_img[(i+y_offset_mask)*mask_grid_size : (i+1+y_offset_mask)*mask_grid_size + 1, (j+x_offset_mask)*mask_grid_size : (j+x_offset_mask+1)*mask_grid_size + 1]\
+             = (mapped_value, mapped_value, mapped_value) # mask with white block
+
 cv2.imwrite(workspace_root + 'mask0.png', obj_mask[0, 0, ...])
 cv2.imwrite(workspace_root + 'mask1.png', obj_mask[0, 1, ...])
 cv2.imwrite(workspace_root + 'masked.png', masked_img)
@@ -94,7 +107,8 @@ def color_options(x):
     }[x]
 
 # visualize classification
-offset_class = 2 # offset for classification error
+y_offset_class = 1 # offset for classification error
+x_offset_class = 1
 grid_size = img.shape[0]/60
 for i in range(60):
     classes.append([])
@@ -107,10 +121,12 @@ for i in range(60):
                 maxi = k
         classes[i].append(maxi)
         if maxi != 0:
-            pt1 = ((j + offset_class)*grid_size, i*grid_size)
-            pt2 = ((j + offset_class)*grid_size+grid_size, i*grid_size+grid_size)
+            pt1 = ((j + y_offset_class)*grid_size, (i+x_offset_class)*grid_size)
+            pt2 = ((j + y_offset_class)*grid_size+grid_size, (i+x_offset_class)*grid_size+grid_size)
             # print maxi
             cv2.rectangle(img, pt1, pt2, color_options(maxi), 2)
+            if maxi not in [1, 2, 3, 4]:
+                print "ERROE OCCURED: an unknown class detected!!!!!!!!!!!!!!!!!!!!!!!!!!"
 
 cv2.imwrite(workspace_root + "example_classified.png", img) # ISSUE1: the image BGR channel VS RGB
 
@@ -126,8 +142,8 @@ cv2.imwrite(workspace_root + "example_classified.png", img) # ISSUE1: the image 
 # cv2.imwrite('bb_visualize2.png', bb_visualize2)
 # cv2.imwrite('bb_visualize3.png', bb_visualize3)
 
-keys = ['classification', 'obj_mask', 'offset_class', 
-'mask_grid_size', 'img', 'max_value', 'offset_mask', 'grid_size', 'transformed_img', 
+keys = ['classification', 'obj_mask', 'x_offset_class', 'y_offset_class', 
+'mask_grid_size', 'img', 'max_value', 'x_offset_mask', 'y_offset_mask', 'grid_size', 'transformed_img', 
 'classes', 'masked_img']
 
 for key in keys:

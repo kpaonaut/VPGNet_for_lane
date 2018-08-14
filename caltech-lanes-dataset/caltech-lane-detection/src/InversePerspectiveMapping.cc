@@ -81,6 +81,7 @@ void mcvGetIPM(const CvMat* inImage, CvMat* outImage,
   FLOAT_POINT2D vp;
   vp = mcvGetVanishingPoint(cameraInfo);
   vp.y = MAX(0, vp.y);
+  cout<<"Vanishing Point:(x, y) "<<vp.x<<", "<<vp.y<<endl; // Rui
   //vp.y = 30;
 
   //get extent of the image in the xfyf plane
@@ -100,6 +101,17 @@ void mcvGetIPM(const CvMat* inImage, CvMat* outImage,
   CvMat * xyLimitsp = cvCreateMat(2, 4, FLOAT_MAT_TYPE);
   CvMat xyLimits = *xyLimitsp;
   mcvTransformImage2Ground(&uvLimits, &xyLimits,cameraInfo);
+
+  // Rui: debug: convert vp.x, vp.y from img to ground then back to img
+  FLOAT_MAT_ELEM_TYPE vp_uvLimitsp[] = {{vp.x, vp.y};}
+  CvMat vp_uvLimits = cvMat(2, 1, FLOAT_MAT_TYPE, vp_uvLimitsp);
+  CvMat * vp_xyLimitsp = cvCreateMat(2, 1, FLOAT_MAT_TYPE);
+  CvMat vp_xyLimits = *vp_xyLimitsp;
+  mcvTransformImage2Ground(&vp_uvLimits, &vp_xyLimits, cameraInfo);
+  cout<<"Ground: "<<vp_xyLimits[0, 0]<<" "<<vp_xyLimits[1, 0]<<endl;
+  mcvTransformGround2Image(&vp_xyLimits, &vp_uvLimits, cameraInfo);
+  cout<<"Cam: "<<vp_uvLimits[0, 0]<<" "<<vp_uvLimits[1, 0]<<endl;
+
   //SHOW_MAT(xyLimitsp, "xyLImits");
 
   //get extent on the ground plane

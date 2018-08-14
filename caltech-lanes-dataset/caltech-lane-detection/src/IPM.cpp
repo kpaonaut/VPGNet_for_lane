@@ -1,3 +1,15 @@
+/***
+Created by Rui Wang @ Tsinghua University
+08/14/2018
+-This file utilzes caltech dataset and performs Inverse Perspective Mapping on it
+-usage:
+input.png(RGB) -> IPM according to configs -> output.png(gray scale image)
+
+--NOTICE:
+to compile the project use the following command:
+g++ IPM.cpp InversePerspectiveMapping.cc mcv.cc -o a `pkg-config --libs opencv`
+***/
+
 #include <opencv2/opencv.hpp>
 #include <list>
 #include <vector>
@@ -59,9 +71,9 @@ int main(){
     // height of the camera in mm
     cameraInfo->cameraHeight = 2179.8; //# 393.7 + 1786.1
     // pitch of the camera
-    cameraInfo->pitch = 14.0;
+    cameraInfo->pitch = 14.0 * CV_PI / 180.0; // in radius!
     // yaw of the camera
-    cameraInfo->yaw  = 0.0;
+    cameraInfo->yaw  = 0.0 * CV_PI / 180.0;
     // imag width and height
     cameraInfo->imageWidth = 640;
     cameraInfo->imageHeight = 480;
@@ -69,6 +81,7 @@ int main(){
     // execute GetIPM, new image is ipm
     list<CvPoint>* out_pt = &outPixels;
     LaneDetector::mcvGetIPM(inImage, ipm, &ipmInfo, cameraInfo);
+    printf("Press any key to continue!\n");
     LaneDetector::SHOW_IMAGE(ipm, "IPM_image");
     cvConvertScale(ipm, ipm, 255);
     output_img = cvarrToMat(ipm);

@@ -48,7 +48,10 @@ print "forward propagation time: ", time.time() - t1
 dt = time.time() - t
 print "Timing ends! Process time:", dt
 
-img = cv2.imread('../example.png')
+
+# Visualize the test result:
+
+img = cv2.imread('example.png')
 for i in range(3):
     for j in range(transformed_img.shape[1]):
         for k in range(transformed_img.shape[2]):
@@ -65,19 +68,6 @@ y_offset_mask = 3
 masked_img = img.copy()
 mask_grid_size = img.shape[0] / obj_mask.shape[2]
 tot = 0
-# for i in range(120):
-#     for j in range(160):
-#         if obj_mask[0, 0, i, j] > 0.5:
-#             obj_mask[0, 0, i, j] = 255
-#             tot += 1
-#         else:
-#             obj_mask[0, 0, i, j] = 0
-#             masked_img[i*mask_grid_size : (i+1)*mask_grid_size + 1, (j+offset_mask)*mask_grid_size : (j+offset_mask+1)*mask_grid_size + 1] = (255, 255, 255) # mask with white block
-#         if obj_mask[0, 1, i, j] > 0.5:
-#             obj_mask[0, 1, i, j] = 255
-#             tot += 1
-#         else:
-#             obj_mask[0, 1, i, j] = 0
 for i in range(120):
     for j in range(160):
         mapped_value =  int(obj_mask[0, 0, i, j] * 255)
@@ -126,7 +116,7 @@ for i in range(60):
             # print maxi
             cv2.rectangle(img, pt1, pt2, color_options(maxi), 2)
             if maxi not in [1, 2, 3, 4]:
-                print "ERROE OCCURED: an unknown class detected!!!!!!!!!!!!!!!!!!!!!!!!!!"
+                print "ERROR OCCURRED: an unknown class detected!!!!!!!!!!!!!!!!!!!!!!!!!!"
 
 cv2.imwrite(workspace_root + "example_classified.png", img) # ISSUE1: the image BGR channel VS RGB
 

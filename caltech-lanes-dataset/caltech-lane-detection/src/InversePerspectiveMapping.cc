@@ -15,7 +15,7 @@
 
 using namespace std;
 #include <opencv2/opencv.hpp>
-#include <highgui.h>
+#include <opencv2/highgui/highgui.hpp>
 
 namespace LaneDetector
 {
@@ -59,12 +59,17 @@ void mcvGetIPM(const CvMat* inImage, CvMat* outImage,
   //cvGetMat(inImage, &inMat);
   //cvGetMat(outImage, &outMat);
   //cout << CV_MAT_TYPE(inImage->type) << " " << CV_MAT_TYPE(FLOAT_MAT_TYPE) <<  " " << CV_MAT_TYPE(INT_MAT_TYPE)<<"\n";
-  if (!(CV_ARE_TYPES_EQ(inImage, outImage) &&
-      (CV_MAT_TYPE(inImage->type)==CV_MAT_TYPE(FLOAT_MAT_TYPE) ||
-      (CV_MAT_TYPE(inImage->type)==CV_MAT_TYPE(INT_MAT_TYPE)))))
+  if ( 
+     !(
+         CV_ARE_TYPES_EQ(inImage, outImage)  &&
+      (  CV_MAT_TYPE(inImage->type)==CV_MAT_TYPE(FLOAT_MAT_TYPE) ||
+      (  CV_MAT_TYPE(inImage->type)==CV_MAT_TYPE(INT_MAT_TYPE) ) ) 
+     )
+     )
   {
+    printf("%d\n", CV_MAT_TYPE(inImage->type));
     cerr << "Unsupported image types in mcvGetIPM";
-    exit(1);
+    //exit(1); // commented by Rui
   }
 
   //get size of input image
@@ -469,7 +474,7 @@ void mcvInitCameraInfo (char * const fileName, CameraInfo *cameraInfo)
   //parsed camera data
   CameraInfoParserInfo camInfo;
   //read the data
-  assert(cameraInfoParser_configfile(fileName, &camInfo, 0, 1, 1)==0);
+  //assert(cameraInfoParser_configfile(fileName, &camInfo, 0, 1, 1)==0); // comment by Rui to avoid makefile! must uncomment if wanna use!
   //init the strucure
   cameraInfo->focalLength.x = camInfo.focalLengthX_arg;
   cameraInfo->focalLength.y = camInfo.focalLengthY_arg;

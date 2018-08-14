@@ -1,7 +1,7 @@
 #include <opencv2/opencv.hpp>
 #include <list>
 #include <vector>
-#include "src/InversePerspectiveMapping.hh"
+#include "InversePerspectiveMapping.hh"
 
 using namespace std;
 using namespace cv;
@@ -41,15 +41,15 @@ int main(){
 
     list<CvPoint> outPixels;
 
-    LaneDetector::CameraInfo *cameraInfo;
+    LaneDetector::CameraInfo *cameraInfo = new LaneDetector::CameraInfo();
     // focal length
     float focalLengthX = 309.4362;
     float focalLengthY = 344.2161;
-    cameraInfo->focalLength = FLOAT_POINT2D(focalLengthX, focalLengthY);
+    cameraInfo->focalLength = cvPoint2D32f(focalLengthX, focalLengthY);
     // optical center coordinates in image frame (origin is (0,0) at top left)
     float opticalCenterX = 317.9034;
     float opticalCenterY = 256.5352;
-    cameraInfo->opticalCenter = FLOAT_POINT2D(opticalCenterX, opticalCenterY);
+    cameraInfo->opticalCenter = cvPoint2D32f(opticalCenterX, opticalCenterY);
     // height of the camera in mm
     cameraInfo->cameraHeight = 2179.8; //# 393.7 + 1786.1
     // pitch of the camera
@@ -61,7 +61,9 @@ int main(){
     cameraInfo->imageHeight = 480;
 
     // execute GetIPM, new image is ipm
-    LaneDetector::mcvGetIPM(inImage, ipm, &ipmInfo, cameraInfo, &outPixels);
+    LaneDetector::IPMInfo* ipm_pt = &ipmInfo;
+    list<CvPoint>* out_pt = &outPixels;
+    LaneDetector::mcvGetIPM(inImage, ipm, ipm_pt, cameraInfo);
     Mat output_img = cvarrToMat(ipm);
     cv::imwrite("output.png", output_img);
 

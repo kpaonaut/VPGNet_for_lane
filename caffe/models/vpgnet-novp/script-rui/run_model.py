@@ -16,7 +16,7 @@ shelf_file_handle = shelve.open(workspace_root + 'shelve.out', 'n')
 
 # model = '/home/rui/VPGNet/caffe/models/vpgnet-novp/deploy_Rui.prototxt' # deploy_Rui: pruned useless branches
 model = '/home/rui/VPGNet/caffe/models/vpgnet-novp/deploy.prototxt' # original deploy, no pruning
-pretrained = '/home/rui/VPGNet/caffe/models/vpgnet-novp/snapshots/split_iter_100000.caffemodel'
+pretrained = '/home/rui/VPGNet/caffe/models/vpgnet-novp/snapshots/split_iter_10000.caffemodel'
 
 caffe.set_mode_gpu()
 caffe.set_device(0)

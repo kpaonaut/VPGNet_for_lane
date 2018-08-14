@@ -2,6 +2,7 @@
 #include <list>
 #include <vector>
 #include "InversePerspectiveMapping.hh"
+#include "mcv.hh"
 
 using namespace std;
 using namespace cv;
@@ -9,8 +10,15 @@ using namespace cv;
 int main(){
 
     Mat image = imread("input.png");
-    CvMat converted_img = CvMat(image);
-    CvMat *inImage = &converted_img;
+    Mat gray_img;
+    cvtColor(image, gray_img, COLOR_BGR2GRAY);
+    CvMat converted_img = CvMat(gray_img);
+    CvMat *int_image = &converted_img;
+    CvMat *inImage = cvCreateMat(int_image->height, int_image->width, FLOAT_MAT_TYPE);
+    cvConvertScale(int_image, inImage, 1./255);
+
+    Mat output_img = cvarrToMat(&converted_img);
+    imwrite("gray.png", output_img);
 
     // LaneDetectorConf *stopLineConf;
 
@@ -25,11 +33,9 @@ int main(){
     // ipmTop = 50
     // ipmBottom = 380 #350 #300 for latest St-lukes data
     // ipmInterpolation = 0;
-    int ipmWidth = 160;
-    int ipmHeight = 120;
-
-    CvMat * ipm;
-    ipm = cvCreateMat(ipmHeight, ipmWidth, inImage->type);
+    int ipmWidth = 160; // 160 by default
+    int ipmHeight = 120; // 120 by default
+    CvMat * ipm = cvCreateMat(ipmHeight, ipmWidth, inImage->type);
 
     LaneDetector::IPMInfo ipmInfo;
     ipmInfo.vpPortion = .2;
@@ -61,10 +67,11 @@ int main(){
     cameraInfo->imageHeight = 480;
 
     // execute GetIPM, new image is ipm
-    LaneDetector::IPMInfo* ipm_pt = &ipmInfo;
     list<CvPoint>* out_pt = &outPixels;
-    LaneDetector::mcvGetIPM(inImage, ipm, ipm_pt, cameraInfo);
-    Mat output_img = cvarrToMat(ipm);
+    LaneDetector::mcvGetIPM(inImage, ipm, &ipmInfo, cameraInfo);
+    LaneDetector::SHOW_IMAGE(ipm, "IPM_image");
+    cvConvertScale(ipm, ipm, 255);
+    output_img = cvarrToMat(ipm);
     cv::imwrite("output.png", output_img);
 
     return 0;

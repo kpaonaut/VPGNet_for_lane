@@ -12,8 +12,8 @@
 
 using namespace std;
 
-#include <cv.h>
-#include <highgui.h>
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 namespace LaneDetector
 {

@@ -8,7 +8,7 @@
 #define INVERSEPERSPECTIVEMAPPING_HH_
 
 
-#include "cv.h"
+#include <opencv2/opencv.hpp>
 #include "mcv.hh"
 #include <list>
 

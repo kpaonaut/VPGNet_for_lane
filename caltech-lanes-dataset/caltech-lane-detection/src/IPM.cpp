@@ -39,22 +39,18 @@ int main(){
     // mcvInitLaneDetectorConf("Stoplines.conf", // stopLineConf config file
     //     stopLineConf)
 
-    // ipmVpPortion = .2//#.075#0.1 #.05
-    // ipmLeft = 85
-    // ipmRight = 550
-    // ipmTop = 50
-    // ipmBottom = 380 #350 #300 for latest St-lukes data
-    // ipmInterpolation = 0;
-    int ipmWidth = 160; // 160 by default
-    int ipmHeight = 120; // 120 by default
+    // sizes: the output size, can be arbitrary
+    int ipmWidth = 640; //160; // 160 by default
+    int ipmHeight = 480; //120; // 120 by default
     CvMat * ipm = cvCreateMat(ipmHeight, ipmWidth, inImage->type);
 
+    // IPM info: define the pixel range
     LaneDetector::IPMInfo ipmInfo;
-    ipmInfo.vpPortion = .2;
+    ipmInfo.vpPortion = .05; // how far is the image top from vanishing point (bc vp is too far, can't display all)
     ipmInfo.ipmLeft = 85;
     ipmInfo.ipmRight = 550;
     ipmInfo.ipmTop = 50;
-    ipmInfo.ipmBottom = 380;
+    ipmInfo.ipmBottom = 480;// 380;
     ipmInfo.ipmInterpolation = 0;
 
     list<CvPoint> outPixels;

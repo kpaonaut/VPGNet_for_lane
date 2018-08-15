@@ -100,13 +100,24 @@ void mcvGetIPM(const CvMat* inImage, CvMat* outImage,
   //get these points on the ground plane
   CvMat * xyLimitsp = cvCreateMat(2, 4, FLOAT_MAT_TYPE);
   CvMat xyLimits = *xyLimitsp;
+  for (int z = 0; z < 4; z++) // Rui
+  {
+    cout<<"uvlimits: "<<CV_MAT_ELEM(uvLimits, float, 0, z)<<" "<<CV_MAT_ELEM(uvLimits, float, 1, z)<<endl;
+  }
+
   mcvTransformImage2Ground(&uvLimits, &xyLimits,cameraInfo);
+
+  for (int z = 0; z < 4; z++) // Rui
+  {
+    cout<<"xylimits: "<<CV_MAT_ELEM(xyLimits, float, 0, z)<<" "<<CV_MAT_ELEM(xyLimits, float, 1, z)<<endl;
+  }
 
   // Rui: debug: convert vp.x, vp.y from img to ground then back to img
   FLOAT_MAT_ELEM_TYPE vp_uvLimitsp[] = {vp.x, vp.y};
   CvMat vp_uvLimits = cvMat(2, 1, FLOAT_MAT_TYPE, vp_uvLimitsp);
   CvMat * vp_xyLimitsp = cvCreateMat(2, 1, FLOAT_MAT_TYPE);
   CvMat vp_xyLimits = *vp_xyLimitsp;
+
   mcvTransformImage2Ground(&vp_uvLimits, &vp_xyLimits, cameraInfo);
   cout<<"Ground: "<<CV_MAT_ELEM(vp_xyLimits, float, 0, 0)<<" "<<CV_MAT_ELEM(vp_xyLimits, float, 1, 0)<<endl;
   mcvTransformGround2Image(&vp_xyLimits, &vp_uvLimits, cameraInfo);
@@ -121,6 +132,8 @@ void mcvGetIPM(const CvMat* inImage, CvMat* outImage,
   double xfMax, xfMin, yfMax, yfMin;
   cvMinMaxLoc(&row1, (double*)&xfMin, (double*)&xfMax, 0, 0, 0);
   cvMinMaxLoc(&row2, (double*)&yfMin, (double*)&yfMax, 0, 0, 0);
+
+  cout<<"ymin: "<<yfMin<<" ymax:"<<yfMax <<endl; // Rui
 
   INT outRow = outImage->height;
   INT outCol = outImage->width;
@@ -240,7 +253,9 @@ void mcvTransformImage2Ground(const CvMat *inPoints,
   cvGetRow(inPoints4, &inPointsr3, 2);
   cvGetRow(inPoints4, &inPointsr4, 3);
   cvSet(&inPointsr3, cvRealScalar(1));
+  //cout<<"inPoints3 "<<CV_MAT_ELEM(inPoints3, float, 0, 0)<<" "<<CV_MAT_ELEM(inPoints3, float, 1, 0)<<endl; // Rui
   cvCopy(inPoints, &inPoints2);
+  //cout<<"inPoints3 "<<CV_MAT_ELEM(inPoints3, float, 0, 0)<<" "<<CV_MAT_ELEM(inPoints3, float, 1, 0)<<endl; // Rui
   //create the transformation matrix
   float c1 = cos(cameraInfo->pitch);
   float s1 = sin(cameraInfo->pitch);

@@ -20,6 +20,8 @@ Note that the installation process might be extremely painful without prior expe
 
 ## Training
 
+## Data Augmentation
+
 ## Test
 The original
 

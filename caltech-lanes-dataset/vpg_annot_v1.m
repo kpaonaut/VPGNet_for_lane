@@ -70,7 +70,7 @@ for i = 1:numFrames
             lane_id = find(ismember(gLabelSubtypes, sptypes{j}));
             segs = [segs; xmin, ymin, xmax, ymax, inst_id, lane_id];
         end
-        segs = unique(segs, 'rows');
+        segs = unique(segs, 'rows'); % Note: also place all bbs in order!
     end    
     numLaneSegs = size(segs, 1) - numLanes;
     fprintf(fileID,'/%s/f%05d.png  %d',category, i-1, size(segs,1));

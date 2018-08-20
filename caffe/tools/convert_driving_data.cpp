@@ -97,7 +97,9 @@ int main(int argc, char** argv) {
       }
   }
 
-  if (FLAGS_shuffle) {
+  // FLAGS_shuffle = true;
+  //if (FLAGS_shuffle) {
+  if (1==1) { // Rui -- must shuffle!
     // randomly shuffle data
     LOG(INFO) << "Shuffling data";
     shuffle(lines.begin(), lines.end());

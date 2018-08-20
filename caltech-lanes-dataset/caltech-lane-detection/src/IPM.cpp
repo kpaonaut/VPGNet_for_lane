@@ -1,7 +1,7 @@
 /***
 Created by Rui Wang @ Tsinghua University
 08/14/2018
--This file utilzes caltech dataset and performs Inverse Perspective Mapping on it
+-This file utilizes caltech dataset and performs Inverse Perspective Mapping on it
 -usage:
 input.png(RGB) -> IPM according to configs -> output.png(gray scale image)
 
@@ -31,13 +31,6 @@ int main(){
 
     Mat output_img = cvarrToMat(&converted_img);
     imwrite("gray.png", output_img);
-
-    // LaneDetectorConf *stopLineConf;
-
-    // init stopLineConf
-    // in LaneDetector.cc
-    // mcvInitLaneDetectorConf("Stoplines.conf", // stopLineConf config file
-    //     stopLineConf)
 
     // sizes: the output size, can be arbitrary
     int ipmWidth = 640; //160; // 160 by default

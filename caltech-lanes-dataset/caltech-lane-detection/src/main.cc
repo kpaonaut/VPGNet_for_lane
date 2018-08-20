@@ -17,8 +17,8 @@
 #include <iomanip>
 #include <ctime>
 
-#include <cv.h>
-#include <highgui.h>
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 // Useful message macro
 #define MSG(fmt, ...) \
@@ -178,8 +178,8 @@ int Process(int argc, char** argv)
 {
   // parse the command line paramters
   gengetopt_args_info options;
-  if (cmdline_parser (argc, argv,  &options) < 0)
-    return -1;
+  //if (cmdline_parser (argc, argv,  &options) < 0)
+  // return -1; // commented by Rui to avoid using cmdline.c
 
   // read the camera configurations
   CameraInfo cameraInfo;

@@ -31,11 +31,19 @@ if stage == 'label':
             combined_labels.write(line)
             combined_labels.write('/' + category + '/g' + words[0][len(words[0]) - 9 : len(words[0])]) # picture name
             combined_labels.write(' ' + words[1]) # number of boxes
+            box_list = []
             while i < len(words) - 3:
                 x_max = 639 - int(words[i])
+                y_max = int(words[i + 3])
                 x_min = 639 - int(words[i + 2])
-                combined_labels.write(' ' + str(x_min) + ' ' + words[i + 3] + ' ' + str(x_max) + ' ' + words[i + 1] + ' ' + words[i + 4])
+                y_min = int(words[i + 1])
+                box_type = int(words[i + 4])
+                box_list.append((x_min, y_min, x_max, y_max, box_type))
+                # combined_labels.write('  ' + str(x_min) + ' ' + words[i + 1] + ' ' + str(x_max) + ' ' + words[i + 3] + ' ' + words[i + 4])
                 i += 5
+            box_list.sort(key = (lambda (a, b, c, d, e): a*1000000 + b * 1000 + c))
+            for box in box_list:
+                combined_labels.write(' ' + str(box[0]) + ' ' + str(box[1]) + ' ' + str(box[2]) + ' ' + str(box[3]) + ' ' + str(box[4]) )
             combined_labels.write('\n')
         f.close()
     combined_labels.close()

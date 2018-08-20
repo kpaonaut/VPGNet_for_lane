@@ -16,7 +16,7 @@ shelf_file_handle = shelve.open(workspace_root + 'shelve.out', 'n')
 
 # model = '/home/rui/VPGNet/caffe/models/vpgnet-novp/deploy_Rui.prototxt' # deploy_Rui: pruned useless branches
 model = '/home/rui/VPGNet/caffe/models/vpgnet-novp/deploy.prototxt' # original deploy, no pruning
-pretrained = '/home/rui/VPGNet/caffe/models/vpgnet-novp/snapshots/split_iter_10000.caffemodel'
+pretrained = '/home/rui/VPGNet/caffe/models/vpgnet-novp/snapshots/split_iter_50000.caffemodel'
 
 caffe.set_mode_gpu()
 caffe.set_device(0)
@@ -79,8 +79,9 @@ for i in range(120):
             masked_img[(i+y_offset_mask)*mask_grid_size : (i+1+y_offset_mask)*mask_grid_size + 1, (j+x_offset_mask)*mask_grid_size : (j+x_offset_mask+1)*mask_grid_size + 1]\
              = (mapped_value, mapped_value, mapped_value) # mask with white block
 
-cv2.imwrite(workspace_root + 'mask0.png', obj_mask[0, 0, ...])
-cv2.imwrite(workspace_root + 'mask1.png', obj_mask[0, 1, ...])
+small_mask = obj_mask[0, 1, ...]
+resized_mask = cv2.resize(small_mask, (640, 480))
+cv2.imwrite(workspace_root + 'mask.png', resized_mask)
 cv2.imwrite(workspace_root + 'masked.png', masked_img)
 
 classification = net.blobs['multi-label'].data

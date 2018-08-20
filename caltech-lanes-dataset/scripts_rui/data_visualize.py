@@ -47,7 +47,10 @@ def main():
                 label1_string = lines[i]
                 labels = label1_string.split()
                 i = 2
-                while i < len(labels) - 1:
+                print labels[0]
+                tot = 0
+                while tot < int(labels[1]):
+                    tot += 1
                     pt1 = (int(labels[i]), int(labels[i + 1]))
                     pt2 = (int(labels[i + 2]), int(labels[i + 3]))
                     bb_class = int(labels[i + 4])

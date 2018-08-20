@@ -6,3 +6,4 @@ caffe/.build_release
 caffe/.build_release/lib/libcaffe.a
 caffe/training_history/*
 .DS_Store
+*.png

@@ -12,7 +12,6 @@ import shelve # store workspace
 workspace_root = 'workspace/4/'
 if not os.path.exists(os.path.join(os.getcwd(), workspace_root)):
     os.mkdir(workspace_root)
-shelf_file_handle = shelve.open(workspace_root + 'shelve.out', 'n')
 
 # model = '/home/rui/VPGNet/caffe/models/vpgnet-novp/deploy_Rui.prototxt' # deploy_Rui: pruned useless branches
 model = '/home/rui/VPGNet/caffe/models/vpgnet-novp/deploy.prototxt' # original deploy, no pruning
@@ -135,7 +134,9 @@ cv2.imwrite(workspace_root + "example_classified.png", img) # ISSUE1: the image 
 
 keys = ['classification', 'obj_mask', 'x_offset_class', 'y_offset_class', 
 'mask_grid_size', 'img', 'max_value', 'x_offset_mask', 'y_offset_mask', 'grid_size', 'transformed_img', 
-'classes', 'masked_img']
+'classes', 'masked_img', 'resized_mask', 'small_mask']
+
+shelf_file_handle = shelve.open(workspace_root + 'shelve.out', 'n')
 
 for key in keys:
     print 'saving variable: ', key

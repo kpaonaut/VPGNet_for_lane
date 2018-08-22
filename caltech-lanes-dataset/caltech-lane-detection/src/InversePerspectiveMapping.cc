@@ -298,7 +298,9 @@ void mcvTransformImage2Ground(const CvMat *inPoints,
         CV_MAT_ELEM(*inPoints4, float, 1, i) / div;
   }
   //put back the result into outPoints
+  // cout<<"inPoints2 "<<CV_MAT_ELEM(inPoints2, float, 0, 0)<<" "<<CV_MAT_ELEM(inPoints2, float, 1, 0)<<endl; // Rui
   cvCopy(&inPoints2, outPoints);
+  // cout << "OK!" << endl; // Rui
   //clear
   cvReleaseMat(&inPoints4);
 }

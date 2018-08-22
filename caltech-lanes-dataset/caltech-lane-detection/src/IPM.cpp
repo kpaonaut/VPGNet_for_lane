@@ -105,8 +105,12 @@ void parse_config(string filename, int &ipmWidth, int &ipmHeight, LaneDetector::
     return;
 }
 
-void points_image2ground(int points[], int n){ // n is the number of points
+void points_image2ground(int n, int *points_x, int m, int *points_y){ // n == m is the number of points, for python interface
 
+    for (int i = 0; i < n; i ++)
+    {
+        cout << points_x[i] << " " << points_y[i] << endl;
+    }
     LaneDetector::CameraInfo *cameraInfo = new LaneDetector::CameraInfo();
     LaneDetector::IPMInfo ipmInfo;
     int ipmWidth = 640; // default, to be changed by parse_config function
@@ -118,13 +122,19 @@ void points_image2ground(int points[], int n){ // n is the number of points
     FLOAT_MAT_ELEM_TYPE uv[2 * n];
     for (int i = 0; i < n; i ++)
     {
-        uv[i] = points[i]; // change the format of points!
-        uv[2 * i + 1] = points[i];
+        uv[i] = points_x[i]; // change the format of points!
+        uv[2 * i + 1] = points_y[i];
     }
     CvMat uv_cvmat = cvMat(2, n, FLOAT_MAT_TYPE, uv);
-    CvMat * xy = cvCreateMat(2, 1, FLOAT_MAT_TYPE);
+    CvMat * xy = cvCreateMat(2, n, FLOAT_MAT_TYPE);
     CvMat xy_cvmat = *xy;
     mcvTransformImage2Ground(&uv_cvmat, &xy_cvmat, cameraInfo);
+    for (int i = 0; i < n; i ++)
+    {
+        points_x[i] = CV_MAT_ELEM(xy_cvmat, float, 0, i);
+        points_y[i] = CV_MAT_ELEM(xy_cvmat, float, 1, i);
+    }
+    return;
 }
 
 int main(){
@@ -157,6 +167,10 @@ int main(){
     cvConvertScale(ipm, ipm, 255);
     output_img = cvarrToMat(ipm);
     cv::imwrite("output.png", output_img);
+
+    int test_x[2] = {200, 300};
+    int test_y[2] = {400, 500};
+    points_image2ground(2, test_x, 2, test_y);
 
     return 0;
 }

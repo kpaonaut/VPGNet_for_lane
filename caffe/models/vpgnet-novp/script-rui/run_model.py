@@ -61,8 +61,8 @@ obj_mask = net.blobs['binary-mask'].data
 # print obj_mask.shape
 # print transformed_img.shape
 
-x_offset_mask = 3 # offset to align output with original pic: due to padding
-y_offset_mask = 3
+x_offset_mask = 4 # offset to align output with original pic: due to padding
+y_offset_mask = 4
 
 masked_img = img.copy()
 mask_grid_size = img.shape[0] / obj_mask.shape[2]

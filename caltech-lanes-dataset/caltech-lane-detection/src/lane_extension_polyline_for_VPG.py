@@ -7,9 +7,10 @@ import scipy
 from scipy import cluster
 
 # define parameters:
-downsample_scale = 0.3 # 0.3 default
-cluster_threshold = 20
-threshold = 30 # number of votes required to be considered a line, 40 default 
+downscale = 0.3 # 0.3 default
+upscale = 1.0 / downscale
+cluster_threshold = int(20 * upscale / 3.33)
+threshold = int(30 * upscale / 3.33) # number of votes required to be considered a line, 40 default 
 # adjustable params:
 # mask geometry
 # houghLinesP parms
@@ -87,9 +88,9 @@ def preprocess(filename, line_type, suppress_output):
     if suppress_output is None:
         cv2.imwrite('thresh_img.png', thresh_img)
 
-    thresh_img = cv2.resize(thresh_img, (0, 0), fx = downsample_scale, fy = downsample_scale) # image downsample, but will be converted back to gray image again!!!
+    thresh_img = cv2.resize(thresh_img, (0, 0), fx = downscale, fy = downscale) # image downsample, but will be converted back to gray image again!!!
     ret, thresh_img = cv2.threshold(thresh_img, 20, 255, cv2.THRESH_BINARY)
-    img = cv2.resize(img, (0, 0), fx = downsample_scale, fy = downsample_scale) # image downsample
+    img = cv2.resize(img, (0, 0), fx = downscale, fy = downscale) # image downsample
 
     # mask the original graph
     APPLY_MASK = 0 # 1: apply, 0: not apply
@@ -154,8 +155,8 @@ def adjust(k, b, y_size, x_size, img, suppress_output):
     # the 0.4, 0.6, 0.4 are define the mask we are applying
     # has to be lower than vanishing point, or the ipm'ed polyline's end point will be negative
     while (x > 0) and (x < x_size - 1) and \
-          (y > 0.45 * y_size): # ( (x < int(x_size * 0.3)) or (x > int(x_size * 0.7)) or (y > int(0.45 * y_size)) ):
-        length += 10
+          (y > 0.48 * y_size): # ( (x < int(x_size * 0.3)) or (x > int(x_size * 0.7)) or (y > int(0.45 * y_size)) ):
+        length += 5
         while True:
             x = x0 + int(length * dx)
             y = y0 + int(length * dy)
@@ -270,7 +271,7 @@ def main(filename_connectedline, filename_dashedline, dest, suppress_output = No
     # plot the original hughlinesP result!
     if suppress_output is None:
         img = cv2.imread(filename_dashedline)
-        img = cv2.resize(img, (0, 0), fx = downsample_scale, fy = downsample_scale)
+        img = cv2.resize(img, (0, 0), fx = downscale, fy = downscale)
         if lines is None: return []
         for i in range(lines.shape[0]):
             for x1,y1,x2,y2 in lines[i]:
@@ -355,14 +356,16 @@ def main(filename_connectedline, filename_dashedline, dest, suppress_output = No
     # plot the result on original picture
     img = cv2.imread(filename_dashedline)
     orig_img = cv2.imread("gray.png")
-    img = cv2.resize(img, (0, 0), fx = downsample_scale, fy = downsample_scale)
+    threshold_img = cv2.imread("thresh_img.png")
+    img = cv2.resize(img, (0, 0), fx = downscale, fy = downscale)
     final_lines = []
     draw_lines_x = []
     draw_lines_y = []
     for line in lines: # lines format: lines = [line1, line2, line3, ...], linei = [(x, y), (x, y), ...]
         for i in range(len(line) - 1):
             cv2.line(img, line[i], line[i + 1], (0, 0, 255), 1)
-            cv2.line(orig_img, (int(3.333 * line[i][0]), int(3.333 * line[i][1])), (int(3.333 * line[i + 1][0]), int(3.333 * line[i + 1][1])), (0, 0, 255), 1)
+            cv2.line(threshold_img, (int(upscale * line[i][0]), int(upscale * line[i][1])), (int(upscale * line[i + 1][0]), int(upscale * line[i + 1][1])), (0, 0, 255), 1)
+            cv2.line(orig_img, (int(upscale * line[i][0]), int(upscale * line[i][1])), (int(upscale * line[i + 1][0]), int(upscale * line[i + 1][1])), (0, 0, 255), 1)
             x1, y1 = line[i]
             x2, y2 = line[i + 1]
             k = (y2 - y1)/(x2 - x1 + 0.0001)
@@ -375,16 +378,17 @@ def main(filename_connectedline, filename_dashedline, dest, suppress_output = No
                 draw_lines_y.append(y2)
 
     if suppress_output is None:
-        img = cv2.resize(img, (0,0), fx=3.33333, fy=3.33333)
+        img = cv2.resize(img, (0,0), fx=upscale, fy=upscale)
         cv2.imwrite(dest + '/houghlines.png', img)
+        cv2.imwrite(dest + '/threshold.png', threshold_img)
         cv2.imwrite("gray_labled.png", orig_img)
 
-    # Note: the lines here are on shrinked image! need to magnify by 3.333
+    # Note: the lines here are on shrinked image! need to magnify by upscale
     for i, x in enumerate(draw_lines_x):
-        draw_lines_x[i] = int(3.3333* x)
+        draw_lines_x[i] = int(upscale* x)
     for i, y in enumerate(draw_lines_y):
-        draw_lines_y[i] = int(3.3333* y)
-    canvas = cv2.imread("gt.png")
+        draw_lines_y[i] = int(upscale* y)
+    canvas = cv2.imread("output.png")
     IPM_draw(draw_lines_x, draw_lines_y, canvas, lines)
 
     return final_lines, masked_img_dashed, img

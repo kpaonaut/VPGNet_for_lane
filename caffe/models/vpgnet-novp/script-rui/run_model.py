@@ -74,12 +74,15 @@ for i in range(120):
 
         mapped_value =  int(obj_mask[0, 1, i, j] * 255)
         obj_mask[0, 1, i, j] = mapped_value
+
         if mapped_value > 100:
             masked_img[(i+y_offset_mask)*mask_grid_size : (i+1+y_offset_mask)*mask_grid_size + 1, (j+x_offset_mask)*mask_grid_size : (j+x_offset_mask+1)*mask_grid_size + 1]\
              = (mapped_value, mapped_value, mapped_value) # mask with white block
 
 small_mask = obj_mask[0, 1, ...]
 resized_mask = cv2.resize(small_mask, (640, 480))
+translationM = np.float32([[1, 0, x_offset_mask*mask_grid_size], [0, 1, y_offset_mask*mask_grid_size]])
+resized_mask = cv2.warpAffine(resized_mask, translationM, (640, 480)) # translate (shift) the image
 cv2.imwrite(workspace_root + 'mask.png', resized_mask)
 cv2.imwrite(workspace_root + 'masked.png', masked_img)
 

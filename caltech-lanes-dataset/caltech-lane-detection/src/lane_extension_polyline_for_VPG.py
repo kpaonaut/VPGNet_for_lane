@@ -83,7 +83,7 @@ def preprocess(filename, line_type, suppress_output):
     if suppress_output is None:
         cv2.imwrite( "test_gray_image" + line_type + ".png", gray_img)
 
-    ret, thresh_img = cv2.threshold(gray_img, 150, 255, cv2.THRESH_BINARY)
+    ret, thresh_img = cv2.threshold(gray_img, 170, 255, cv2.THRESH_BINARY)
     if suppress_output is None:
         cv2.imwrite('thresh_img.png', thresh_img)
 
@@ -354,6 +354,7 @@ def main(filename_connectedline, filename_dashedline, dest, suppress_output = No
 
     # plot the result on original picture
     img = cv2.imread(filename_dashedline)
+    orig_img = cv2.imread("gray.png")
     img = cv2.resize(img, (0, 0), fx = downsample_scale, fy = downsample_scale)
     final_lines = []
     draw_lines_x = []
@@ -361,6 +362,7 @@ def main(filename_connectedline, filename_dashedline, dest, suppress_output = No
     for line in lines: # lines format: lines = [line1, line2, line3, ...], linei = [(x, y), (x, y), ...]
         for i in range(len(line) - 1):
             cv2.line(img, line[i], line[i + 1], (0, 0, 255), 1)
+            cv2.line(orig_img, (int(3.333 * line[i][0]), int(3.333 * line[i][1])), (int(3.333 * line[i + 1][0]), int(3.333 * line[i + 1][1])), (0, 0, 255), 1)
             x1, y1 = line[i]
             x2, y2 = line[i + 1]
             k = (y2 - y1)/(x2 - x1 + 0.0001)
@@ -375,6 +377,7 @@ def main(filename_connectedline, filename_dashedline, dest, suppress_output = No
     if suppress_output is None:
         img = cv2.resize(img, (0,0), fx=3.33333, fy=3.33333)
         cv2.imwrite(dest + '/houghlines.png', img)
+        cv2.imwrite("gray_labled.png", orig_img)
 
     # Note: the lines here are on shrinked image! need to magnify by 3.333
     for i, x in enumerate(draw_lines_x):

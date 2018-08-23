@@ -3007,8 +3007,9 @@ SWIG_Python_NonDynamicSetAttr(PyObject *obj, PyObject *name, PyObject *value) {
 /* -------- TYPES TABLE (BEGIN) -------- */
 
 #define SWIGTYPE_p_char swig_types[0]
-static swig_type_info *swig_types[2];
-static swig_module_info swig_module = {swig_types, 1, 0, 0, 0, 0};
+#define SWIGTYPE_p_scale_xy swig_types[1]
+static swig_type_info *swig_types[3];
+static swig_module_info swig_module = {swig_types, 2, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -3114,7 +3115,10 @@ namespace swig {
 
 
     #define SWIG_FILE_WITH_INIT
-    void points_image2ground(int n, int *points_x, int m, int *points_y);
+    struct scale_xy{
+        double step_x, step_y;
+    };
+    scale_xy points_image2ground(int n, int *points_x, int m, int *points_y);
 
 
 #ifndef SWIG_FILE_WITH_INIT
@@ -3126,6 +3130,55 @@ namespace swig {
 
 
 #include <complex> 
+
+
+SWIGINTERN int
+SWIG_AsVal_double (PyObject *obj, double *val)
+{
+  int res = SWIG_TypeError;
+  if (PyFloat_Check(obj)) {
+    if (val) *val = PyFloat_AsDouble(obj);
+    return SWIG_OK;
+#if PY_VERSION_HEX < 0x03000000
+  } else if (PyInt_Check(obj)) {
+    if (val) *val = PyInt_AsLong(obj);
+    return SWIG_OK;
+#endif
+  } else if (PyLong_Check(obj)) {
+    double v = PyLong_AsDouble(obj);
+    if (!PyErr_Occurred()) {
+      if (val) *val = v;
+      return SWIG_OK;
+    } else {
+      PyErr_Clear();
+    }
+  }
+#ifdef SWIG_PYTHON_CAST_MODE
+  {
+    int dispatch = 0;
+    double d = PyFloat_AsDouble(obj);
+    if (!PyErr_Occurred()) {
+      if (val) *val = d;
+      return SWIG_AddCast(SWIG_OK);
+    } else {
+      PyErr_Clear();
+    }
+    if (!dispatch) {
+      long v = PyLong_AsLong(obj);
+      if (!PyErr_Occurred()) {
+	if (val) *val = v;
+	return SWIG_AddCast(SWIG_AddCast(SWIG_OK));
+      } else {
+	PyErr_Clear();
+      }
+    }
+  }
+#endif
+  return res;
+}
+
+
+  #define SWIG_From_double   PyFloat_FromDouble 
 
 
 #if NPY_API_VERSION < 0x00000007
@@ -3608,6 +3661,151 @@ namespace swig {
 #ifdef __cplusplus
 extern "C" {
 #endif
+SWIGINTERN PyObject *_wrap_scale_xy_step_x_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  scale_xy *arg1 = (scale_xy *) 0 ;
+  double arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  double val2 ;
+  int ecode2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:scale_xy_step_x_set",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_scale_xy, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "scale_xy_step_x_set" "', argument " "1"" of type '" "scale_xy *""'"); 
+  }
+  arg1 = reinterpret_cast< scale_xy * >(argp1);
+  ecode2 = SWIG_AsVal_double(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "scale_xy_step_x_set" "', argument " "2"" of type '" "double""'");
+  } 
+  arg2 = static_cast< double >(val2);
+  if (arg1) (arg1)->step_x = arg2;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_scale_xy_step_x_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  scale_xy *arg1 = (scale_xy *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  double result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:scale_xy_step_x_get",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_scale_xy, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "scale_xy_step_x_get" "', argument " "1"" of type '" "scale_xy *""'"); 
+  }
+  arg1 = reinterpret_cast< scale_xy * >(argp1);
+  result = (double) ((arg1)->step_x);
+  resultobj = SWIG_From_double(static_cast< double >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_scale_xy_step_y_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  scale_xy *arg1 = (scale_xy *) 0 ;
+  double arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  double val2 ;
+  int ecode2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:scale_xy_step_y_set",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_scale_xy, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "scale_xy_step_y_set" "', argument " "1"" of type '" "scale_xy *""'"); 
+  }
+  arg1 = reinterpret_cast< scale_xy * >(argp1);
+  ecode2 = SWIG_AsVal_double(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "scale_xy_step_y_set" "', argument " "2"" of type '" "double""'");
+  } 
+  arg2 = static_cast< double >(val2);
+  if (arg1) (arg1)->step_y = arg2;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_scale_xy_step_y_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  scale_xy *arg1 = (scale_xy *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  double result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:scale_xy_step_y_get",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_scale_xy, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "scale_xy_step_y_get" "', argument " "1"" of type '" "scale_xy *""'"); 
+  }
+  arg1 = reinterpret_cast< scale_xy * >(argp1);
+  result = (double) ((arg1)->step_y);
+  resultobj = SWIG_From_double(static_cast< double >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_scale_xy(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  scale_xy *result = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)":new_scale_xy")) SWIG_fail;
+  result = (scale_xy *)new scale_xy();
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_scale_xy, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_delete_scale_xy(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  scale_xy *arg1 = (scale_xy *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:delete_scale_xy",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_scale_xy, SWIG_POINTER_DISOWN |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_scale_xy" "', argument " "1"" of type '" "scale_xy *""'"); 
+  }
+  arg1 = reinterpret_cast< scale_xy * >(argp1);
+  delete arg1;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *scale_xy_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *obj;
+  if (!PyArg_ParseTuple(args,(char*)"O:swigregister", &obj)) return NULL;
+  SWIG_TypeNewClientData(SWIGTYPE_p_scale_xy, SWIG_NewClientData(obj));
+  return SWIG_Py_Void();
+}
+
 SWIGINTERN PyObject *_wrap_points_image2ground(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   int arg1 ;
@@ -3620,6 +3818,7 @@ SWIGINTERN PyObject *_wrap_points_image2ground(PyObject *SWIGUNUSEDPARM(self), P
   int i3 = 0 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
+  scale_xy result;
   
   if (!PyArg_ParseTuple(args,(char *)"OO:points_image2ground",&obj0,&obj1)) SWIG_fail;
   {
@@ -3638,8 +3837,8 @@ SWIGINTERN PyObject *_wrap_points_image2ground(PyObject *SWIGUNUSEDPARM(self), P
     for (i3=0; i3 < array_numdims(array3); ++i3) arg3 *= array_size(array3,i3);
     arg4 = (int*) array_data(array3);
   }
-  points_image2ground(arg1,arg2,arg3,arg4);
-  resultobj = SWIG_Py_Void();
+  result = points_image2ground(arg1,arg2,arg3,arg4);
+  resultobj = SWIG_NewPointerObj((new scale_xy(static_cast< const scale_xy& >(result))), SWIGTYPE_p_scale_xy, SWIG_POINTER_OWN |  0 );
   return resultobj;
 fail:
   return NULL;
@@ -3648,6 +3847,13 @@ fail:
 
 static PyMethodDef SwigMethods[] = {
 	 { (char *)"SWIG_PyInstanceMethod_New", (PyCFunction)SWIG_PyInstanceMethod_New, METH_O, NULL},
+	 { (char *)"scale_xy_step_x_set", _wrap_scale_xy_step_x_set, METH_VARARGS, NULL},
+	 { (char *)"scale_xy_step_x_get", _wrap_scale_xy_step_x_get, METH_VARARGS, NULL},
+	 { (char *)"scale_xy_step_y_set", _wrap_scale_xy_step_y_set, METH_VARARGS, NULL},
+	 { (char *)"scale_xy_step_y_get", _wrap_scale_xy_step_y_get, METH_VARARGS, NULL},
+	 { (char *)"new_scale_xy", _wrap_new_scale_xy, METH_VARARGS, NULL},
+	 { (char *)"delete_scale_xy", _wrap_delete_scale_xy, METH_VARARGS, NULL},
+	 { (char *)"scale_xy_swigregister", scale_xy_swigregister, METH_VARARGS, NULL},
 	 { (char *)"points_image2ground", _wrap_points_image2ground, METH_VARARGS, NULL},
 	 { NULL, NULL, 0, NULL }
 };
@@ -3656,15 +3862,19 @@ static PyMethodDef SwigMethods[] = {
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (BEGIN) -------- */
 
 static swig_type_info _swigt__p_char = {"_p_char", "char *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_scale_xy = {"_p_scale_xy", "scale_xy *", 0, 0, (void*)0, 0};
 
 static swig_type_info *swig_type_initial[] = {
   &_swigt__p_char,
+  &_swigt__p_scale_xy,
 };
 
 static swig_cast_info _swigc__p_char[] = {  {&_swigt__p_char, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_scale_xy[] = {  {&_swigt__p_scale_xy, 0, 0, 0},{0, 0, 0, 0}};
 
 static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_char,
+  _swigc__p_scale_xy,
 };
 
 

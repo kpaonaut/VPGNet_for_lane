@@ -2,6 +2,7 @@
  * \file InversePerspectiveMapping.cc
  * \author Mohamed Aly <malaa@caltech.edu>
  * \date 11/29/2006
+ * modified by Rui Wang, 08/22/2018
  */
 
 #include "InversePerspectiveMapping.hh"

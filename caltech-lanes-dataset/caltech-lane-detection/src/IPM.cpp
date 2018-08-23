@@ -105,13 +105,64 @@ void parse_config(string filename, int &ipmWidth, int &ipmHeight, LaneDetector::
     return;
 }
 
-void points_image2ground(int n, int *points_x, int m, int *points_y){ // n == m is the number of points, for python interface
+struct scale_xy{
+    double step_x, step_y;
+};
+
+scale_xy get_resize_scale(int width, int height, LaneDetector::IPMInfo* ipmInfo, LaneDetector::CameraInfo* cameraInfo){
+    // find the scale between ground coord and ipm image (dim_ground / scale = dim_ipm)
+
+    FLOAT u, v;
+    v = height;
+    u = width;
+    //get the vanishing point
+    FLOAT_POINT2D vp;
+    vp = mcvGetVanishingPoint(cameraInfo);
+    vp.y = MAX(0, vp.y);
+
+    FLOAT_MAT_ELEM_TYPE eps = ipmInfo->vpPortion * v;//VP_PORTION*v;
+    ipmInfo->ipmLeft = MAX(0, ipmInfo->ipmLeft);
+    ipmInfo->ipmRight = MIN(u-1, ipmInfo->ipmRight);
+    ipmInfo->ipmTop = MAX(vp.y+eps, ipmInfo->ipmTop);
+    ipmInfo->ipmBottom = MIN(v-1, ipmInfo->ipmBottom);
+    FLOAT_MAT_ELEM_TYPE uvLimitsp[] = {vp.x,
+    ipmInfo->ipmRight, ipmInfo->ipmLeft, vp.x,
+    ipmInfo->ipmTop, ipmInfo->ipmTop,   ipmInfo->ipmTop,  ipmInfo->ipmBottom};
+    //{vp.x, u, 0, vp.x,
+    //vp.y+eps, vp.y+eps, vp.y+eps, v};
+    CvMat uvLimits = cvMat(2, 4, FLOAT_MAT_TYPE, uvLimitsp);
+
+    //get these points on the ground plane
+    CvMat * xyLimitsp = cvCreateMat(2, 4, FLOAT_MAT_TYPE);
+    CvMat xyLimits = *xyLimitsp;
+    mcvTransformImage2Ground(&uvLimits, &xyLimits,cameraInfo);
+    CvMat row1, row2;
+    cvGetRow(&xyLimits, &row1, 0);
+    cvGetRow(&xyLimits, &row2, 1);
+    double xfMax, xfMin, yfMax, yfMin;
+    cvMinMaxLoc(&row1, (double*)&xfMin, (double*)&xfMax, 0, 0, 0);
+    cvMinMaxLoc(&row2, (double*)&yfMin, (double*)&yfMax, 0, 0, 0);
+
+    cout<<"ymin: "<<yfMin<<" ymax:"<<yfMax <<endl; // Rui
+    INT outRow = height;
+    INT outCol = width;
+    FLOAT_MAT_ELEM_TYPE stepRow = (yfMax-yfMin)/outRow;
+    FLOAT_MAT_ELEM_TYPE stepCol = (xfMax-xfMin)/outCol;
+
+    scale_xy scale;
+    scale.step_x = stepCol;
+    scale.step_y = stepRow;
+
+    return scale;
+}
+
+scale_xy points_image2ground(int n, int *points_x, int m, int *points_y){ // n == m is the number of points, for python interface
 
     for (int i = 0; i < n; i ++)
     {
         cout << points_x[i] << " " << points_y[i] << endl;
     }
-    LaneDetector::CameraInfo *cameraInfo = new LaneDetector::CameraInfo();
+    LaneDetector::CameraInfo* cameraInfo = new LaneDetector::CameraInfo();
     LaneDetector::IPMInfo ipmInfo;
     int ipmWidth = 640; // default, to be changed by parse_config function
     int ipmHeight = 480;
@@ -123,7 +174,7 @@ void points_image2ground(int n, int *points_x, int m, int *points_y){ // n == m 
     for (int i = 0; i < n; i ++)
     {
         uv[i] = points_x[i]; // change the format of points!
-        uv[2 * i + 1] = points_y[i];
+        uv[n + i] = points_y[i];
     }
     CvMat uv_cvmat = cvMat(2, n, FLOAT_MAT_TYPE, uv);
     CvMat * xy = cvCreateMat(2, n, FLOAT_MAT_TYPE);
@@ -133,8 +184,9 @@ void points_image2ground(int n, int *points_x, int m, int *points_y){ // n == m 
     {
         points_x[i] = CV_MAT_ELEM(xy_cvmat, float, 0, i);
         points_y[i] = CV_MAT_ELEM(xy_cvmat, float, 1, i);
+        cout << points_x[i] << " " << points_y[i] << endl;
     }
-    return;
+    return get_resize_scale(ipmWidth, ipmHeight, &ipmInfo, cameraInfo);
 }
 
 int main(){
@@ -167,10 +219,6 @@ int main(){
     cvConvertScale(ipm, ipm, 255);
     output_img = cvarrToMat(ipm);
     cv::imwrite("output.png", output_img);
-
-    int test_x[2] = {200, 300};
-    int test_y[2] = {400, 500};
-    points_image2ground(2, test_x, 2, test_y);
 
     return 0;
 }

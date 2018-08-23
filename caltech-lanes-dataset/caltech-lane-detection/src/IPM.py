@@ -90,6 +90,32 @@ except AttributeError:
     _newclass = 0
 
 
+class scale_xy(_object):
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, scale_xy, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, scale_xy, name)
+    __repr__ = _swig_repr
+    __swig_setmethods__["step_x"] = _IPM.scale_xy_step_x_set
+    __swig_getmethods__["step_x"] = _IPM.scale_xy_step_x_get
+    if _newclass:
+        step_x = _swig_property(_IPM.scale_xy_step_x_get, _IPM.scale_xy_step_x_set)
+    __swig_setmethods__["step_y"] = _IPM.scale_xy_step_y_set
+    __swig_getmethods__["step_y"] = _IPM.scale_xy_step_y_get
+    if _newclass:
+        step_y = _swig_property(_IPM.scale_xy_step_y_get, _IPM.scale_xy_step_y_set)
+
+    def __init__(self):
+        this = _IPM.new_scale_xy()
+        try:
+            self.this.append(this)
+        except Exception:
+            self.this = this
+    __swig_destroy__ = _IPM.delete_scale_xy
+    __del__ = lambda self: None
+scale_xy_swigregister = _IPM.scale_xy_swigregister
+scale_xy_swigregister(scale_xy)
+
 
 def points_image2ground(n, m):
     return _IPM.points_image2ground(n, m)

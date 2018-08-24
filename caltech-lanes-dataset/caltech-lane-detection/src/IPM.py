@@ -120,6 +120,10 @@ scale_xy_swigregister(scale_xy)
 def points_image2ground(n, m):
     return _IPM.points_image2ground(n, m)
 points_image2ground = _IPM.points_image2ground
+
+def points_ipm2image(n, m):
+    return _IPM.points_ipm2image(n, m)
+points_ipm2image = _IPM.points_ipm2image
 # This file is compatible with both classic and new-style classes.
 
 

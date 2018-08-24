@@ -3118,7 +3118,8 @@ namespace swig {
     struct scale_xy{
         double step_x, step_y;
     };
-    scale_xy points_image2ground(int n, int *points_x, int m, int *points_y);
+    scale_xy points_image2ground(int n, float *points_x, int m, float *points_y);
+    scale_xy points_ipm2image(int n, float *points_x, int m, float *points_y);
 
 
 #ifndef SWIG_FILE_WITH_INIT
@@ -3809,9 +3810,9 @@ SWIGINTERN PyObject *scale_xy_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObj
 SWIGINTERN PyObject *_wrap_points_image2ground(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   int arg1 ;
-  int *arg2 = (int *) 0 ;
+  float *arg2 = (float *) 0 ;
   int arg3 ;
-  int *arg4 = (int *) 0 ;
+  float *arg4 = (float *) 0 ;
   PyArrayObject *array1 = NULL ;
   int i1 = 0 ;
   PyArrayObject *array3 = NULL ;
@@ -3822,22 +3823,61 @@ SWIGINTERN PyObject *_wrap_points_image2ground(PyObject *SWIGUNUSEDPARM(self), P
   
   if (!PyArg_ParseTuple(args,(char *)"OO:points_image2ground",&obj0,&obj1)) SWIG_fail;
   {
-    array1 = obj_to_array_no_conversion(obj0, NPY_INT);
+    array1 = obj_to_array_no_conversion(obj0, NPY_FLOAT);
     if (!array1 || !require_dimensions(array1,1) || !require_contiguous(array1)
       || !require_native(array1)) SWIG_fail;
     arg1 = 1;
     for (i1=0; i1 < array_numdims(array1); ++i1) arg1 *= array_size(array1,i1);
-    arg2 = (int*) array_data(array1);
+    arg2 = (float*) array_data(array1);
   }
   {
-    array3 = obj_to_array_no_conversion(obj1, NPY_INT);
+    array3 = obj_to_array_no_conversion(obj1, NPY_FLOAT);
     if (!array3 || !require_dimensions(array3,1) || !require_contiguous(array3)
       || !require_native(array3)) SWIG_fail;
     arg3 = 1;
     for (i3=0; i3 < array_numdims(array3); ++i3) arg3 *= array_size(array3,i3);
-    arg4 = (int*) array_data(array3);
+    arg4 = (float*) array_data(array3);
   }
   result = points_image2ground(arg1,arg2,arg3,arg4);
+  resultobj = SWIG_NewPointerObj((new scale_xy(static_cast< const scale_xy& >(result))), SWIGTYPE_p_scale_xy, SWIG_POINTER_OWN |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_points_ipm2image(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  int arg1 ;
+  float *arg2 = (float *) 0 ;
+  int arg3 ;
+  float *arg4 = (float *) 0 ;
+  PyArrayObject *array1 = NULL ;
+  int i1 = 0 ;
+  PyArrayObject *array3 = NULL ;
+  int i3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  scale_xy result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:points_ipm2image",&obj0,&obj1)) SWIG_fail;
+  {
+    array1 = obj_to_array_no_conversion(obj0, NPY_FLOAT);
+    if (!array1 || !require_dimensions(array1,1) || !require_contiguous(array1)
+      || !require_native(array1)) SWIG_fail;
+    arg1 = 1;
+    for (i1=0; i1 < array_numdims(array1); ++i1) arg1 *= array_size(array1,i1);
+    arg2 = (float*) array_data(array1);
+  }
+  {
+    array3 = obj_to_array_no_conversion(obj1, NPY_FLOAT);
+    if (!array3 || !require_dimensions(array3,1) || !require_contiguous(array3)
+      || !require_native(array3)) SWIG_fail;
+    arg3 = 1;
+    for (i3=0; i3 < array_numdims(array3); ++i3) arg3 *= array_size(array3,i3);
+    arg4 = (float*) array_data(array3);
+  }
+  result = points_ipm2image(arg1,arg2,arg3,arg4);
   resultobj = SWIG_NewPointerObj((new scale_xy(static_cast< const scale_xy& >(result))), SWIGTYPE_p_scale_xy, SWIG_POINTER_OWN |  0 );
   return resultobj;
 fail:
@@ -3855,6 +3895,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"delete_scale_xy", _wrap_delete_scale_xy, METH_VARARGS, NULL},
 	 { (char *)"scale_xy_swigregister", scale_xy_swigregister, METH_VARARGS, NULL},
 	 { (char *)"points_image2ground", _wrap_points_image2ground, METH_VARARGS, NULL},
+	 { (char *)"points_ipm2image", _wrap_points_ipm2image, METH_VARARGS, NULL},
 	 { NULL, NULL, 0, NULL }
 };
 

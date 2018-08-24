@@ -156,12 +156,8 @@ scale_xy get_resize_scale(int width, int height, LaneDetector::IPMInfo* ipmInfo,
     return scale;
 }
 
-scale_xy points_image2ground(int n, int *points_x, int m, int *points_y){ // n == m is the number of points, for python interface
+scale_xy points_image2ground(int n, float *points_x, int m, float *points_y){ // n == m is the number of points, for python interface
 
-    for (int i = 0; i < n; i ++)
-    {
-        cout << points_x[i] << " " << points_y[i] << endl;
-    }
     LaneDetector::CameraInfo* cameraInfo = new LaneDetector::CameraInfo();
     LaneDetector::IPMInfo ipmInfo;
     int ipmWidth = 640; // default, to be changed by parse_config function
@@ -184,9 +180,38 @@ scale_xy points_image2ground(int n, int *points_x, int m, int *points_y){ // n =
     {
         points_x[i] = CV_MAT_ELEM(xy_cvmat, float, 0, i);
         points_y[i] = CV_MAT_ELEM(xy_cvmat, float, 1, i);
-        cout << points_x[i] << " " << points_y[i] << endl;
     }
     return get_resize_scale(ipmWidth, ipmHeight, &ipmInfo, cameraInfo);
+}
+
+scale_xy points_ipm2image(int n, float *points_x, int m, float *points_y){ // n == m is the number of points, for python interface
+// NOTICE! this is not from ground to image, but from ipm image back to driver's perspective image!
+    LaneDetector::CameraInfo* cameraInfo = new LaneDetector::CameraInfo();
+    LaneDetector::IPMInfo ipmInfo;
+    int ipmWidth = 640; // default, to be changed by parse_config function
+    int ipmHeight = 480;
+    string filename = "camera.conf";
+    parse_config(filename, ipmWidth, ipmHeight, cameraInfo, ipmInfo);
+
+    scale_xy step_size = get_resize_scale(ipmWidth, ipmHeight, &ipmInfo, cameraInfo);
+
+    // FLOAT_MAT_ELEM_TYPE uv[] = {pt1.x, pt2.x, pt1.y, pt2.y};
+    FLOAT_MAT_ELEM_TYPE xy[2 * n];
+    for (int i = 0; i < n; i ++)
+    {
+        xy[i] = static_cast<int> ((points_x[i] - ipmWidth / 2) * step_size.step_x);
+        xy[n + i] = static_cast<int> ((ipmHeight - points_y[i]) * step_size.step_y);
+    }
+    CvMat xy_cvmat = cvMat(2, n, FLOAT_MAT_TYPE, xy);
+    CvMat * uv = cvCreateMat(2, n, FLOAT_MAT_TYPE);
+    CvMat uv_cvmat = *uv;
+    mcvTransformGround2Image(&xy_cvmat, &uv_cvmat, cameraInfo);
+    for (int i = 0; i < n; i ++)
+    {
+        points_x[i] = CV_MAT_ELEM(uv_cvmat, float, 0, i);
+        points_y[i] = CV_MAT_ELEM(uv_cvmat, float, 1, i);
+    }
+    return step_size;
 }
 
 int main(){

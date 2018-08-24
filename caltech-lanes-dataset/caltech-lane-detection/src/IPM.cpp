@@ -240,7 +240,7 @@ int main(){
     list<CvPoint> outPixels;
     LaneDetector::mcvGetIPM(inImage, ipm, &ipmInfo, cameraInfo);
     printf("Press any key to continue!\n");
-    LaneDetector::SHOW_IMAGE(ipm, "IPM_image");
+    // LaneDetector::SHOW_IMAGE(ipm, "IPM_image");
     cvConvertScale(ipm, ipm, 255);
     output_img = cvarrToMat(ipm);
     cv::imwrite("output.png", output_img);

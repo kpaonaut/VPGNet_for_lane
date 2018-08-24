@@ -292,7 +292,7 @@ def main(filename_connectedline, filename_dashedline, dest, suppress_output = No
     # 2. perform clustering
     z = cluster.hierarchy.centroid(y) # finish clustering
     ending = 0
-    while z[ending, 2] < cluster_threshold: # cluster distance < 10, continue clustering!
+    while ending < z.shape[0] and z[ending, 2] < cluster_threshold: # cluster distance < 10, continue clustering!
         ending += 1
     ending -= 1 # the last cluster where distance < 10
 

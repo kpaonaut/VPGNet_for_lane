@@ -417,28 +417,31 @@ def main(filename, dest, suppress_output = None):
         orig_img = cv2.imread("o.png")
 
     lines = houghlines(masked_img_connected, img, suppress_output)
-    if lines is None:
-        return []
+    if lines is not None:
 
-    ave_lines = cluster_lines(masked_img_connected, lines, suppress_output)
+        ave_lines = cluster_lines(masked_img_connected, lines, suppress_output)
 
-    # further adjust all lines to the middle
-    lines = []
-    for (k, b) in ave_lines:
-        line = adjust(k, b, masked_img_connected.shape[0], masked_img_connected.shape[1], masked_img_connected, suppress_output)
-        lines.append(line)
+        # further adjust all lines to the middle
+        lines = []
+        for (k, b) in ave_lines:
+            line = adjust(k, b, masked_img_connected.shape[0], masked_img_connected.shape[1], masked_img_connected, suppress_output)
+            lines.append(line)
 
-    # filter through lines, make polyline control points sparser, and convert them to image coordinates
-    final_lines, lines, npx, npy = clean_up(img, orig_img, lines, suppress_output)
+        # filter through lines, make polyline control points sparser, and convert them to image coordinates
+        final_lines, lines, npx, npy = clean_up(img, orig_img, lines, suppress_output)
 
-    # rescale npx, npy back to original image (not 640*480!) and store in the same shape as lines
-    tot = 0
-    lines_in_img = []
-    for i in range(len(lines)): # lines format: lines = [line1, line2, line3, ...], linei = [(x, y), (x, y), ...]
-        lines_in_img.append([])
-        for j in range(len(lines[i])):
-            lines_in_img[i].append((int(npx[tot] * resize_x), int(npy[tot] * resize_y)))
-            tot += 1
+        # rescale npx, npy back to original image (not 640*480!) and store in the same shape as lines
+        tot = 0
+        lines_in_img = []
+        for i in range(len(lines)): # lines format: lines = [line1, line2, line3, ...], linei = [(x, y), (x, y), ...]
+            lines_in_img.append([])
+            for j in range(len(lines[i])):
+                if (npx[tot] >= 0) and (npx[tot] < 640) and (npy[tot] >= 0) and (npy[tot] < 480):
+                    lines_in_img[i].append((int(npx[tot] * resize_x), int(npy[tot] * resize_y)))
+                tot += 1
+    
+    else:
+        lines_in_img = []
 
     return lines_in_img
 

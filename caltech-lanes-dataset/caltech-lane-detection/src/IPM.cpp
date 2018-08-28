@@ -34,7 +34,7 @@ void parse_config(string filename, int &ipmWidth, int &ipmHeight, LaneDetector::
         ipmHeight = 480;
 
         // IPM info: define the pixel range
-        ipmInfo.vpPortion = 0.05; // how far is the image top from vanishing point (bc vp is too far, can't display all)
+        ipmInfo.vpPortion = 0.05; // how far is the image top from vanishing point (bc vp is too far, can't display all), default 0.05
         ipmInfo.ipmLeft = 85;
         ipmInfo.ipmRight = 550;
         ipmInfo.ipmTop = 50;
@@ -150,6 +150,7 @@ struct scale_xy{
     double step_x, step_y;
 };
 
+double _xfMax, _xfMin, _yfMax, _yfMin; // global var for use in other functions
 scale_xy get_resize_scale(int width, int height, LaneDetector::IPMInfo* ipmInfo, LaneDetector::CameraInfo* cameraInfo){
     // find the scale between ground coord and ipm image (dim_ground / scale = dim_ipm)
 
@@ -183,6 +184,10 @@ scale_xy get_resize_scale(int width, int height, LaneDetector::IPMInfo* ipmInfo,
     double xfMax, xfMin, yfMax, yfMin;
     cvMinMaxLoc(&row1, (double*)&xfMin, (double*)&xfMax, 0, 0, 0);
     cvMinMaxLoc(&row2, (double*)&yfMin, (double*)&yfMax, 0, 0, 0);
+    _xfMax = xfMax;
+    _xfMin = xfMin;
+    _yfMax = yfMax;
+    _yfMin = yfMin;
 
     // cout<<"ymin: "<<yfMin<<" ymax:"<<yfMax <<endl; // Rui
     INT outRow = height;
@@ -240,8 +245,8 @@ scale_xy points_ipm2image(int n, float *points_x, int m, float *points_y){ // n 
     FLOAT_MAT_ELEM_TYPE xy[2 * n];
     for (int i = 0; i < n; i ++)
     {
-        xy[i] = static_cast<int> ((points_x[i] - ipmWidth / 2) * step_size.step_x);
-        xy[n + i] = static_cast<int> ((ipmHeight - points_y[i]) * step_size.step_y);
+        xy[i] = static_cast<int> ((points_x[i] - ipmWidth / 2) * step_size.step_x + (_xfMax + _xfMin) / 2.0);
+        xy[n + i] = static_cast<int> ((ipmHeight - points_y[i]) * step_size.step_y + _yfMin);
     }
     CvMat xy_cvmat = cvMat(2, n, FLOAT_MAT_TYPE, xy);
     CvMat * uv = cvCreateMat(2, n, FLOAT_MAT_TYPE);

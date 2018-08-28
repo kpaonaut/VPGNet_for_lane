@@ -46,8 +46,8 @@ void parse_config(string filename, int &ipmWidth, int &ipmHeight, LaneDetector::
         float focalLengthY = 100;
         cameraInfo->focalLength = cvPoint2D32f(focalLengthX, focalLengthY);
         // optical center coordinates in image frame (origin is (0,0) at top left)
-        float opticalCenterX = 320;
-        float opticalCenterY = 240;
+        float opticalCenterX = 317.9;
+        float opticalCenterY = 256.5;
         cameraInfo->opticalCenter = cvPoint2D32f(opticalCenterX, opticalCenterY);
         // height of the camera in mm
         cameraInfo->cameraHeight = 2179.8; //# 393.7 + 1786.1

@@ -17,9 +17,50 @@ g++ IPM.cpp InversePerspectiveMapping.cc mcv.cc -o a `pkg-config --libs opencv`
 #include "mcv.hh"
 #include <cstring>
 #include <fstream>
+#include <iostream>
 
 using namespace std;
 using namespace cv;
+
+#define UNITY 1
+
+void parse_config(string filename, int &ipmWidth, int &ipmHeight, LaneDetector::CameraInfo* cameraInfo, LaneDetector::IPMInfo &ipmInfo, int options){
+    // This reloaded function is to use the constant camera config for Unity
+    // so that the program doesn't load the config file every time
+    // in order to change parameters, use the other function!
+    if (options == UNITY){
+        // sizes: the output size, can be arbitrary
+        ipmWidth = 640; // output size!
+        ipmHeight = 480;
+
+        // IPM info: define the pixel range
+        ipmInfo.vpPortion = 0.05; // how far is the image top from vanishing point (bc vp is too far, can't display all)
+        ipmInfo.ipmLeft = 85;
+        ipmInfo.ipmRight = 550;
+        ipmInfo.ipmTop = 50;
+        ipmInfo.ipmBottom = 480;// 380;
+        ipmInfo.ipmInterpolation = 0;
+
+        // focal length
+        float focalLengthX = 100;
+        float focalLengthY = 100;
+        cameraInfo->focalLength = cvPoint2D32f(focalLengthX, focalLengthY);
+        // optical center coordinates in image frame (origin is (0,0) at top left)
+        float opticalCenterX = 320;
+        float opticalCenterY = 240;
+        cameraInfo->opticalCenter = cvPoint2D32f(opticalCenterX, opticalCenterY);
+        // height of the camera in mm
+        cameraInfo->cameraHeight = 2179.8; //# 393.7 + 1786.1
+        // pitch of the camera
+        cameraInfo->pitch = 14.0 * CV_PI / 180.0; // in radius!
+        // yaw of the camera
+        cameraInfo->yaw  = 0.0 * CV_PI / 180.0;
+        // imag width and height
+        cameraInfo->imageWidth = 640; // camera photo size! input size.
+        cameraInfo->imageHeight = 480;
+    }
+    return;
+}
 
 void parse_config(string filename, int &ipmWidth, int &ipmHeight, LaneDetector::CameraInfo* cameraInfo, LaneDetector::IPMInfo &ipmInfo){
     ifstream config_file;
@@ -143,7 +184,7 @@ scale_xy get_resize_scale(int width, int height, LaneDetector::IPMInfo* ipmInfo,
     cvMinMaxLoc(&row1, (double*)&xfMin, (double*)&xfMax, 0, 0, 0);
     cvMinMaxLoc(&row2, (double*)&yfMin, (double*)&yfMax, 0, 0, 0);
 
-    cout<<"ymin: "<<yfMin<<" ymax:"<<yfMax <<endl; // Rui
+    // cout<<"ymin: "<<yfMin<<" ymax:"<<yfMax <<endl; // Rui
     INT outRow = height;
     INT outCol = width;
     FLOAT_MAT_ELEM_TYPE stepRow = (yfMax-yfMin)/outRow;
@@ -163,7 +204,7 @@ scale_xy points_image2ground(int n, float *points_x, int m, float *points_y){ //
     int ipmWidth = 640; // default, to be changed by parse_config function
     int ipmHeight = 480;
     string filename = "camera.conf";
-    parse_config(filename, ipmWidth, ipmHeight, cameraInfo, ipmInfo);
+    parse_config(filename, ipmWidth, ipmHeight, cameraInfo, ipmInfo, UNITY); // get rid of "UNITY" if you want to use config in file
 
     // FLOAT_MAT_ELEM_TYPE uv[] = {pt1.x, pt2.x, pt1.y, pt2.y};
     FLOAT_MAT_ELEM_TYPE uv[2 * n];
@@ -191,7 +232,7 @@ scale_xy points_ipm2image(int n, float *points_x, int m, float *points_y){ // n 
     int ipmWidth = 640; // default, to be changed by parse_config function
     int ipmHeight = 480;
     string filename = "camera.conf";
-    parse_config(filename, ipmWidth, ipmHeight, cameraInfo, ipmInfo);
+    parse_config(filename, ipmWidth, ipmHeight, cameraInfo, ipmInfo, UNITY); // get rid of "UNITY" if you want to use config in file
 
     scale_xy step_size = get_resize_scale(ipmWidth, ipmHeight, &ipmInfo, cameraInfo);
 
@@ -214,12 +255,76 @@ scale_xy points_ipm2image(int n, float *points_x, int m, float *points_y){ // n 
     return step_size;
 }
 
+void image_ipm(float *input, int h_in, int w_in, float *output, int h, int w){ // convert image to ipm'ed image
+
+    CvMat converted_img = cvMat(h_in, w_in, FLOAT_MAT_TYPE, input); // gray image
+
+    Mat debug_img = cvarrToMat(&converted_img);
+    CvMat *int_image = &converted_img;
+    CvMat *inImage = cvCreateMat(int_image->height, int_image->width, FLOAT_MAT_TYPE);
+    cvConvertScale(int_image, inImage, 1./255);
+
+    Mat output_img = cvarrToMat(&converted_img);
+    // imwrite("gray.png", output_img);
+
+    LaneDetector::CameraInfo *cameraInfo = new LaneDetector::CameraInfo();
+    LaneDetector::IPMInfo ipmInfo;
+    int ipmWidth = 640; // default, can be changed by function
+    int ipmHeight = 480;
+    string filename = "camera.conf";
+
+    parse_config(filename, ipmWidth, ipmHeight, cameraInfo, ipmInfo, UNITY); // get rid of "UNITY" if you want to use config in file
+
+    CvMat * ipm = cvCreateMat(ipmHeight, ipmWidth, inImage->type); // the picture after IPM will be stored in ipm
+    // execute GetIPM, new image is ipm
+    list<CvPoint> outPixels;
+    LaneDetector::mcvGetIPM(inImage, ipm, &ipmInfo, cameraInfo);
+    // LaneDetector::SHOW_IMAGE(ipm, "IPM_image");
+    cvConvertScale(ipm, ipm, 255);
+
+    output_img = cvarrToMat(ipm);
+
+    for (int i = 0; i < output_img.rows; i++)
+        for (int j = 0; j < output_img.cols; j++)
+        {
+            // cout << output_img.at<float>(i, j) << " "; // debug
+            output[i * w + j] = (output_img.at<float>(i, j));
+        }
+
+    return;
+}
+
+string type2str(int type) { // get image type
+  string r;
+
+  uchar depth = type & CV_MAT_DEPTH_MASK;
+  uchar chans = 1 + (type >> CV_CN_SHIFT);
+
+  switch ( depth ) {
+    case CV_8U:  r = "8U"; break;
+    case CV_8S:  r = "8S"; break;
+    case CV_16U: r = "16U"; break;
+    case CV_16S: r = "16S"; break;
+    case CV_32S: r = "32S"; break;
+    case CV_32F: r = "32F"; break;
+    case CV_64F: r = "64F"; break;
+    default:     r = "User"; break;
+  }
+
+  r += "C";
+  r += (chans+'0');
+
+  return r;
+}
+
 int main(){
 
     Mat image = imread("input.png");
     Mat gray_img;
     cvtColor(image, gray_img, COLOR_BGR2GRAY);
     CvMat converted_img = CvMat(gray_img);
+
+
     CvMat *int_image = &converted_img;
     CvMat *inImage = cvCreateMat(int_image->height, int_image->width, FLOAT_MAT_TYPE);
     cvConvertScale(int_image, inImage, 1./255);
@@ -240,9 +345,10 @@ int main(){
     list<CvPoint> outPixels;
     LaneDetector::mcvGetIPM(inImage, ipm, &ipmInfo, cameraInfo);
     printf("Press any key to continue!\n");
-    // LaneDetector::SHOW_IMAGE(ipm, "IPM_image");
-    cvConvertScale(ipm, ipm, 255);
+    LaneDetector::SHOW_IMAGE(ipm, "IPM_image");
+    cvConvertScale(ipm, ipm, 255); // 0-255, still float
     output_img = cvarrToMat(ipm);
+
     cv::imwrite("output.png", output_img);
 
     return 0;

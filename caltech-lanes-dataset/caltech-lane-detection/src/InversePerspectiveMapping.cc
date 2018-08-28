@@ -82,7 +82,7 @@ void mcvGetIPM(const CvMat* inImage, CvMat* outImage,
   FLOAT_POINT2D vp;
   vp = mcvGetVanishingPoint(cameraInfo);
   vp.y = MAX(0, vp.y);
-  cout<<"Vanishing Point:(x, y) "<<vp.x<<", "<<vp.y<<endl; // Rui
+  // cout<<"Vanishing Point:(x, y) "<<vp.x<<", "<<vp.y<<endl; // Rui
   //vp.y = 30;
 
   //get extent of the image in the xfyf plane
@@ -101,28 +101,28 @@ void mcvGetIPM(const CvMat* inImage, CvMat* outImage,
   //get these points on the ground plane
   CvMat * xyLimitsp = cvCreateMat(2, 4, FLOAT_MAT_TYPE);
   CvMat xyLimits = *xyLimitsp;
-  for (int z = 0; z < 4; z++) // Rui
-  {
-    cout<<"uvlimits: "<<CV_MAT_ELEM(uvLimits, float, 0, z)<<" "<<CV_MAT_ELEM(uvLimits, float, 1, z)<<endl;
-  }
+  // for (int z = 0; z < 4; z++) // Rui
+  // {
+  //   cout<<"uvlimits: "<<CV_MAT_ELEM(uvLimits, float, 0, z)<<" "<<CV_MAT_ELEM(uvLimits, float, 1, z)<<endl;
+  // }
 
   mcvTransformImage2Ground(&uvLimits, &xyLimits,cameraInfo);
 
-  for (int z = 0; z < 4; z++) // Rui
-  {
-    cout<<"xylimits: "<<CV_MAT_ELEM(xyLimits, float, 0, z)<<" "<<CV_MAT_ELEM(xyLimits, float, 1, z)<<endl;
-  }
+  // for (int z = 0; z < 4; z++) // Rui
+  // {
+  //   cout<<"xylimits: "<<CV_MAT_ELEM(xyLimits, float, 0, z)<<" "<<CV_MAT_ELEM(xyLimits, float, 1, z)<<endl;
+  // }
 
   // Rui: debug: convert vp.x, vp.y from img to ground then back to img
-  FLOAT_MAT_ELEM_TYPE vp_uvLimitsp[] = {vp.x, vp.y};
-  CvMat vp_uvLimits = cvMat(2, 1, FLOAT_MAT_TYPE, vp_uvLimitsp);
-  CvMat * vp_xyLimitsp = cvCreateMat(2, 1, FLOAT_MAT_TYPE);
-  CvMat vp_xyLimits = *vp_xyLimitsp;
+  // FLOAT_MAT_ELEM_TYPE vp_uvLimitsp[] = {vp.x, vp.y};
+  // CvMat vp_uvLimits = cvMat(2, 1, FLOAT_MAT_TYPE, vp_uvLimitsp);
+  // CvMat * vp_xyLimitsp = cvCreateMat(2, 1, FLOAT_MAT_TYPE);
+  // CvMat vp_xyLimits = *vp_xyLimitsp;
 
-  mcvTransformImage2Ground(&vp_uvLimits, &vp_xyLimits, cameraInfo);
-  cout<<"Ground: "<<CV_MAT_ELEM(vp_xyLimits, float, 0, 0)<<" "<<CV_MAT_ELEM(vp_xyLimits, float, 1, 0)<<endl;
-  mcvTransformGround2Image(&vp_xyLimits, &vp_uvLimits, cameraInfo);
-  cout<<"Cam: "<<CV_MAT_ELEM(vp_uvLimits, float, 0, 0)<<" "<<CV_MAT_ELEM(vp_uvLimits, float, 1, 0)<<endl;
+  // mcvTransformImage2Ground(&vp_uvLimits, &vp_xyLimits, cameraInfo);
+  // cout<<"Ground: "<<CV_MAT_ELEM(vp_xyLimits, float, 0, 0)<<" "<<CV_MAT_ELEM(vp_xyLimits, float, 1, 0)<<endl;
+  // mcvTransformGround2Image(&vp_xyLimits, &vp_uvLimits, cameraInfo);
+  // cout<<"Cam: "<<CV_MAT_ELEM(vp_uvLimits, float, 0, 0)<<" "<<CV_MAT_ELEM(vp_uvLimits, float, 1, 0)<<endl;
 
   //SHOW_MAT(xyLimitsp, "xyLImits");
 
@@ -134,7 +134,7 @@ void mcvGetIPM(const CvMat* inImage, CvMat* outImage,
   cvMinMaxLoc(&row1, (double*)&xfMin, (double*)&xfMax, 0, 0, 0);
   cvMinMaxLoc(&row2, (double*)&yfMin, (double*)&yfMax, 0, 0, 0);
 
-  cout<<"ymin: "<<yfMin<<" ymax:"<<yfMax <<endl; // Rui
+  // cout<<"ymin: "<<yfMin<<" ymax:"<<yfMax <<endl; // Rui
 
   INT outRow = outImage->height;
   INT outCol = outImage->width;

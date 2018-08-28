@@ -124,6 +124,10 @@ points_image2ground = _IPM.points_image2ground
 def points_ipm2image(n, m):
     return _IPM.points_ipm2image(n, m)
 points_ipm2image = _IPM.points_ipm2image
+
+def image_ipm(input, output):
+    return _IPM.image_ipm(input, output)
+image_ipm = _IPM.image_ipm
 # This file is compatible with both classic and new-style classes.
 
 

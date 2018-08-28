@@ -3115,11 +3115,13 @@ namespace swig {
 
 
     #define SWIG_FILE_WITH_INIT
+    #include <cstring>
     struct scale_xy{
         double step_x, step_y;
     };
     scale_xy points_image2ground(int n, float *points_x, int m, float *points_y);
     scale_xy points_ipm2image(int n, float *points_x, int m, float *points_y);
+    void image_ipm(float *input, int h_in, int w_in, float *output, int h, int w);
 
 
 #ifndef SWIG_FILE_WITH_INIT
@@ -3885,6 +3887,44 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_image_ipm(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  float *arg1 = (float *) 0 ;
+  int arg2 ;
+  int arg3 ;
+  float *arg4 = (float *) 0 ;
+  int arg5 ;
+  int arg6 ;
+  PyArrayObject *array1 = NULL ;
+  PyArrayObject *array4 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:image_ipm",&obj0,&obj1)) SWIG_fail;
+  {
+    array1 = obj_to_array_no_conversion(obj0, NPY_FLOAT);
+    if (!array1 || !require_dimensions(array1,2) || !require_contiguous(array1)
+      || !require_native(array1)) SWIG_fail;
+    arg1 = (float*) array_data(array1);
+    arg2 = (int) array_size(array1,0);
+    arg3 = (int) array_size(array1,1);
+  }
+  {
+    array4 = obj_to_array_no_conversion(obj1, NPY_FLOAT);
+    if (!array4 || !require_dimensions(array4,2) || !require_contiguous(array4)
+      || !require_native(array4)) SWIG_fail;
+    arg4 = (float*) array_data(array4);
+    arg5 = (int) array_size(array4,0);
+    arg6 = (int) array_size(array4,1);
+  }
+  image_ipm(arg1,arg2,arg3,arg4,arg5,arg6);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 static PyMethodDef SwigMethods[] = {
 	 { (char *)"SWIG_PyInstanceMethod_New", (PyCFunction)SWIG_PyInstanceMethod_New, METH_O, NULL},
 	 { (char *)"scale_xy_step_x_set", _wrap_scale_xy_step_x_set, METH_VARARGS, NULL},
@@ -3896,6 +3936,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"scale_xy_swigregister", scale_xy_swigregister, METH_VARARGS, NULL},
 	 { (char *)"points_image2ground", _wrap_points_image2ground, METH_VARARGS, NULL},
 	 { (char *)"points_ipm2image", _wrap_points_ipm2image, METH_VARARGS, NULL},
+	 { (char *)"image_ipm", _wrap_image_ipm, METH_VARARGS, NULL},
 	 { NULL, NULL, 0, NULL }
 };
 

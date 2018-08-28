@@ -85,6 +85,7 @@ def preprocess(filename, line_type, suppress_output):
     # NOTICE! picture has to be float when passed into IPM cpp, return value is also float!
     tmp = cv2.imread(filename)
     tmp = cv2.cvtColor(tmp, cv2.COLOR_BGR2GRAY)
+    resize_x, resize_y = tmp.shape[1] / 640.0, tmp.shape[0] / 480.0
     tmp = cv2.resize(tmp, (640, 480))
     original_img = tmp.copy()
     tmp = tmp.astype(dtype = np.float32, copy = False)
@@ -125,9 +126,12 @@ def preprocess(filename, line_type, suppress_output):
     if suppress_output is None:
         pass # cv2.imwrite('masked_img_' + line_type + '.png', masked_img)
 
-    return img, masked_img, original_img
+    return img, masked_img, original_img, resize_x, resize_y
 
 def adjust(k, b, y_size, x_size, img, suppress_output):
+    """
+    With a good initial guess, adjust the extracted lane lines along the way to the middle of the lane-marking
+    """
 
     # line function: y = kx + b
     line = []
@@ -239,13 +243,7 @@ def adjust(k, b, y_size, x_size, img, suppress_output):
                     
     return line
 
-def main(filename, dest, suppress_output = None):
-    # threshold + resize
-    img, masked_img_connected, orig_img = preprocess(filename, 'connected', suppress_output) # img: ipm'ed image
-    if suppress_output is None:
-        cv2.imwrite("o.png", orig_img)
-        orig_img = cv2.imread("o.png")
-
+def houghlines(masked_img_connected, img, suppress_output):
     # Perform houghlines on connected lines
     rho = 1
     theta = np.pi / 180 / 2 # resolution: 0.5 degree
@@ -256,7 +254,7 @@ def main(filename, dest, suppress_output = None):
 
     # adjust all lines' end points to middle!
     if lines is None:
-        return [], np.array([[]]), np.array([[]])
+        return None
     for i in range(lines.shape[0]):
         for y1, x1, y2, x2 in lines[i]:
             x1, y1 = find_mid(x1, y1, x2, y2, masked_img_connected)
@@ -275,6 +273,9 @@ def main(filename, dest, suppress_output = None):
         print hough_img.shape
         cv2.imwrite('houghlines_raw.png', hough_img)
 
+    return lines
+
+def cluster_lines(masked_img_connected, lines, suppress_output):
     # filter the results, lines too close will be taken as one line!
     # 1. convert the lines to angle-intercept space - NOTE: intercept is on x-axis on the bottom of the image!
     y0 = int(0.67 * masked_img_connected.shape[0])
@@ -310,6 +311,7 @@ def main(filename, dest, suppress_output = None):
 
     if suppress_output is None:
         print "cluster representatives: format (intercept, theta)"
+
     ave_lines = []
     for each_cluster in clusters:
         if suppress_output is None:
@@ -338,18 +340,13 @@ def main(filename, dest, suppress_output = None):
         k = math.tan(ave_theta / 180.0 * np.pi)
         b = - k * ave_intercept + y0
         ave_lines.append((k, b))
+
     if suppress_output is None:
         print "cluster representatives all printed!"
 
-    # further adjust all lines to the middle
-    lines = []
-    # if suppress_output is None:
-    #     print ave_lines
-    for (k, b) in ave_lines:
-        line = adjust(k, b, masked_img_connected.shape[0], masked_img_connected.shape[1], masked_img_connected, suppress_output)
+    return ave_lines
 
-        lines.append(line)
-
+def clean_up(img, orig_img, lines, suppress_output):
     # plot the result on original picture
     if suppress_output is None:
         threshold_img = cv2.imread("thresh_img.png")
@@ -395,8 +392,7 @@ def main(filename, dest, suppress_output = None):
     npx = np.array(draw_lines_x, dtype = np.float32) # in order to pass into c++
     npy = np.array(draw_lines_y, dtype = np.float32)
 
-    if suppress_output is None:
-        step = IPM.points_ipm2image(npx, npy) # convert npx, npy to ground coordinates
+    step = IPM.points_ipm2image(npx, npy) # convert npx, npy to picture coordinates
 
     if suppress_output is None:
         tot = 0
@@ -407,10 +403,44 @@ def main(filename, dest, suppress_output = None):
             tot += 1
 
         img = cv2.resize(img, (0,0), fx=upscale, fy=upscale)
-        cv2.imwrite(dest + '/threshold.png', threshold_img)
+        cv2.imwrite('threshold.png', threshold_img)
         cv2.imwrite("labeled.png", orig_img)
 
-    return lines
+    return final_lines, lines, npx, npy
+
+def main(filename, dest, suppress_output = None):
+
+    # threshold + resize
+    img, masked_img_connected, orig_img, resize_x, resize_y = preprocess(filename, 'connected', suppress_output) # img: ipm'ed image
+    if suppress_output is None:
+        cv2.imwrite("o.png", orig_img)
+        orig_img = cv2.imread("o.png")
+
+    lines = houghlines(masked_img_connected, img, suppress_output)
+    if lines is None:
+        return []
+
+    ave_lines = cluster_lines(masked_img_connected, lines, suppress_output)
+
+    # further adjust all lines to the middle
+    lines = []
+    for (k, b) in ave_lines:
+        line = adjust(k, b, masked_img_connected.shape[0], masked_img_connected.shape[1], masked_img_connected, suppress_output)
+        lines.append(line)
+
+    # filter through lines, make polyline control points sparser, and convert them to image coordinates
+    final_lines, lines, npx, npy = clean_up(img, orig_img, lines, suppress_output)
+
+    # rescale npx, npy back to original image (not 640*480!) and store in the same shape as lines
+    tot = 0
+    lines_in_img = []
+    for i in range(len(lines)): # lines format: lines = [line1, line2, line3, ...], linei = [(x, y), (x, y), ...]
+        lines_in_img.append([])
+        for j in range(len(lines[i])):
+            lines_in_img[i].append((int(npx[tot] * resize_x), int(npy[tot] * resize_y)))
+            tot += 1
+
+    return lines_in_img
 
 if __name__ == "__main__":
     main(sys.argv[1], '.', None)

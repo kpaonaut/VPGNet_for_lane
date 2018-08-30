@@ -1,3 +1,4 @@
+g++ IPM.cpp InversePerspectiveMapping.cc mcv.cc -o a `pkg-config --libs opencv`
 g++ -c -fPIC IPM.cpp InversePerspectiveMapping.cc mcv.cc `pkg-config --libs opencv`
 swig -c++ -python IPM.i
 g++ -c -fPIC IPM_wrap.cxx  -I/usr/include/python2.7 -I/usr/lib/python2.7 `pkg-config --libs opencv`

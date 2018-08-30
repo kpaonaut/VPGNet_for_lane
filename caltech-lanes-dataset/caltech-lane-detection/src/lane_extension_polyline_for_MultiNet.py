@@ -12,7 +12,7 @@ import sys
 # define parameters:
 downscale = 4.0 # 0.3 default
 upscale = 1.0 / downscale
-cluster_threshold = int(6 * 3.33 / upscale)
+cluster_threshold = int(3 * 3.33 / upscale)
 # adjustable params:
 # mask geometry
 # houghLinesP parms
@@ -111,7 +111,7 @@ def preprocess(filename, line_type, suppress_output):
     mask = np.zeros_like(thresh_img)
     pt1 = (0, 0) # specify 8 vertices of the (U-shaped, concave) mask
     pt2 = (int(0.01 * x_size), 0)
-    pt3 = (pt2[0], int(0.2 * y_size)) # default 0.57
+    pt3 = (pt2[0], int(0.1 * y_size)) # default 0.57
     pt4 = (int(0.99 * x_size), pt3[1])
     pt5 = (pt4[0], 0)
     pt6 = (x_size - 1, 0)
@@ -170,8 +170,8 @@ def adjust(k, b, y_size, x_size, img, suppress_output):
     # the 0.4, 0.6, 0.4 are define the mask we are applying
     # has to be lower than vanishing point, or the ipm'ed polyline's end point will be negative
     while (x > 0) and (x < x_size - 1) and \
-          (y > 0.2 * y_size): # ( (x < int(x_size * 0.3)) or (x > int(x_size * 0.7)) or (y > int(0.45 * y_size)) ):
-        length += 40
+          (y > 0.05 * y_size): # ( (x < int(x_size * 0.3)) or (x > int(x_size * 0.7)) or (y > int(0.45 * y_size)) ):
+        length += 20
         while True:
             x = x0 + int(length * dx)
             y = y0 + int(length * dy)
@@ -222,7 +222,7 @@ def adjust(k, b, y_size, x_size, img, suppress_output):
                     step_r += 1
                     if img[y, r] == 255: break
                 if img[y, r] == 0 and img[y, l] == 0: # there is a space here!
-                    line.append((x, y))
+                    pass # line.append((x, y))
                 else:
                     if step_r < step_l:
                         l = r
@@ -247,7 +247,7 @@ def houghlines(masked_img_connected, img, suppress_output):
     # Perform houghlines on connected lines
     rho = 1
     theta = np.pi / 180 / 2 # resolution: 0.5 degree
-    threshold = int(60 * downscale)
+    threshold = int(40 * downscale)
     min_line_length = int(100 * downscale) # line length
     max_line_gap = 10000 # the gap between points on the line 
     lines = cv2.HoughLinesP(masked_img_connected, rho, theta, threshold, np.array([]), min_line_length, max_line_gap) # find the lines
@@ -264,6 +264,8 @@ def houghlines(masked_img_connected, img, suppress_output):
     # plot the original hughlinesP result!
     if suppress_output is None:
         hough_img = img.copy()
+        cv2.imwrite('houghlines_raw.png', hough_img)
+        hough_img = cv2.imread('houghlines_raw.png') # convert gray scale to BGR
         if lines is None: return []
         for i in range(lines.shape[0]):
             for x1,y1,x2,y2 in lines[i]:
@@ -362,9 +364,11 @@ def clean_up(img, orig_img, lines, suppress_output):
         tmp = []
         counter = 0
         for i in range(len(line)):
-            if counter % 4 == 0:
+            if counter % 8 == 0:
                 tmp.append(line[i])
             counter += 1
+        if len(tmp) == 1: # only one point in line, invalid! add the last point also
+            tmp.append(line[len(line) - 1])
         sparse_lines.append(tmp)
     lines = sparse_lines
 
@@ -424,7 +428,16 @@ def main(filename, dest, suppress_output = None):
         # further adjust all lines to the middle
         lines = []
         for (k, b) in ave_lines:
+            print k, b
             line = adjust(k, b, masked_img_connected.shape[0], masked_img_connected.shape[1], masked_img_connected, suppress_output)
+            
+            # if only straight line
+            line = []
+            y = 0
+            while y < masked_img_connected.shape[0] - 1:
+                y += 10
+                line.append((int((y - b)/k), y))
+
             lines.append(line)
 
         # filter through lines, make polyline control points sparser, and convert them to image coordinates
@@ -439,11 +452,26 @@ def main(filename, dest, suppress_output = None):
                 if (npx[tot] >= 0) and (npx[tot] < 640) and (npy[tot] >= 0) and (npy[tot] < 480):
                     lines_in_img[i].append((int(npx[tot] * resize_x), int(npy[tot] * resize_y)))
                 tot += 1
+
+        # further convert to ground coordinates:
+        IPM.points_image2ground(npx, npy)
+        tot = 0
+        lines_in_gnd = []
+        for i in range(len(lines)): # lines format: lines = [line1, line2, line3, ...], linei = [(x, y), (x, y), ...]
+            lines_in_gnd.append([])
+            for j in range(len(lines[i])):
+                if (npy[tot] >= 0):
+                    lines_in_gnd[i].append((npx[tot], npy[tot]))
+                tot += 1
+        
+        if suppress_output is None:
+            print lines_in_gnd
+
     
     else:
-        lines_in_img = []
+        lines_in_gnd = []
 
-    return lines_in_img
+    return lines_in_gnd
 
 if __name__ == "__main__":
     main(sys.argv[1], '.', None)

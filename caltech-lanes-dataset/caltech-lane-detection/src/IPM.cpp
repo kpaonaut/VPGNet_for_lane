@@ -34,11 +34,11 @@ void parse_config(string filename, int &ipmWidth, int &ipmHeight, LaneDetector::
         ipmHeight = 480;
 
         // IPM info: define the pixel range
-        ipmInfo.vpPortion = 0.05; // how far is the image top from vanishing point (bc vp is too far, can't display all), default 0.05
-        ipmInfo.ipmLeft = 85;
-        ipmInfo.ipmRight = 550;
+        ipmInfo.vpPortion = 0.04; // how far is the image top from vanishing point (bc vp is too far, can't display all), default 0.05
+        ipmInfo.ipmLeft = 0;//85;
+        ipmInfo.ipmRight = 639;//550;
         ipmInfo.ipmTop = 50;
-        ipmInfo.ipmBottom = 480;// 380;
+        ipmInfo.ipmBottom = 479;// 380;
         ipmInfo.ipmInterpolation = 0;
 
         // focal length
@@ -46,13 +46,13 @@ void parse_config(string filename, int &ipmWidth, int &ipmHeight, LaneDetector::
         float focalLengthY = 100;
         cameraInfo->focalLength = cvPoint2D32f(focalLengthX, focalLengthY);
         // optical center coordinates in image frame (origin is (0,0) at top left)
-        float opticalCenterX = 317.9;
-        float opticalCenterY = 256.5;
+        float opticalCenterX = 319;//317.9;
+        float opticalCenterY = 239;//256.5;
         cameraInfo->opticalCenter = cvPoint2D32f(opticalCenterX, opticalCenterY);
         // height of the camera in mm
-        cameraInfo->cameraHeight = 2179.8; //# 393.7 + 1786.1
+        cameraInfo->cameraHeight = 2000; // 2179.8; //# 393.7 + 1786.1
         // pitch of the camera
-        cameraInfo->pitch = 14.0 * CV_PI / 180.0; // in radius!
+        cameraInfo->pitch = 0.0;//14.0 * CV_PI / 180.0; // in radius!
         // yaw of the camera
         cameraInfo->yaw  = 0.0 * CV_PI / 180.0;
         // imag width and height
@@ -209,7 +209,8 @@ scale_xy points_image2ground(int n, float *points_x, int m, float *points_y){ //
     int ipmWidth = 640; // default, to be changed by parse_config function
     int ipmHeight = 480;
     string filename = "camera.conf";
-    parse_config(filename, ipmWidth, ipmHeight, cameraInfo, ipmInfo, UNITY); // get rid of "UNITY" if you want to use config in file
+    parse_config(filename, ipmWidth, ipmHeight, cameraInfo, ipmInfo); // get rid of "UNITY" if you want to use config in file
+    //parse_config(filename, ipmWidth, ipmHeight, cameraInfo, ipmInfo, UNITY); // get rid of "UNITY" if you want to use config in file
 
     // FLOAT_MAT_ELEM_TYPE uv[] = {pt1.x, pt2.x, pt1.y, pt2.y};
     FLOAT_MAT_ELEM_TYPE uv[2 * n];
@@ -237,7 +238,9 @@ scale_xy points_ipm2image(int n, float *points_x, int m, float *points_y){ // n 
     int ipmWidth = 640; // default, to be changed by parse_config function
     int ipmHeight = 480;
     string filename = "camera.conf";
-    parse_config(filename, ipmWidth, ipmHeight, cameraInfo, ipmInfo, UNITY); // get rid of "UNITY" if you want to use config in file
+    
+    parse_config(filename, ipmWidth, ipmHeight, cameraInfo, ipmInfo);
+    //parse_config(filename, ipmWidth, ipmHeight, cameraInfo, ipmInfo, UNITY); // get rid of "UNITY" if you want to use config in file
 
     scale_xy step_size = get_resize_scale(ipmWidth, ipmHeight, &ipmInfo, cameraInfo);
 
@@ -278,7 +281,8 @@ void image_ipm(float *input, int h_in, int w_in, float *output, int h, int w){ /
     int ipmHeight = 480;
     string filename = "camera.conf";
 
-    parse_config(filename, ipmWidth, ipmHeight, cameraInfo, ipmInfo, UNITY); // get rid of "UNITY" if you want to use config in file
+    parse_config(filename, ipmWidth, ipmHeight, cameraInfo, ipmInfo);
+    //parse_config(filename, ipmWidth, ipmHeight, cameraInfo, ipmInfo, UNITY); // get rid of "UNITY" if you want to use config in file
 
     CvMat * ipm = cvCreateMat(ipmHeight, ipmWidth, inImage->type); // the picture after IPM will be stored in ipm
     // execute GetIPM, new image is ipm

@@ -12,7 +12,7 @@ import sys
 # define parameters:
 downscale = 4.0 # 0.3 default
 upscale = 1.0 / downscale
-cluster_threshold = int(3 * 3.33 / upscale)
+cluster_threshold = int(4 * 3.33 / upscale)
 # adjustable params:
 # mask geometry
 # houghLinesP parms
@@ -247,8 +247,8 @@ def houghlines(masked_img_connected, img, suppress_output):
     # Perform houghlines on connected lines
     rho = 1
     theta = np.pi / 180 / 2 # resolution: 0.5 degree
-    threshold = int(40 * downscale)
-    min_line_length = int(100 * downscale) # line length
+    threshold = int(20 * downscale)
+    min_line_length = int(60 * downscale) # line length
     max_line_gap = 10000 # the gap between points on the line 
     lines = cv2.HoughLinesP(masked_img_connected, rho, theta, threshold, np.array([]), min_line_length, max_line_gap) # find the lines
 
@@ -285,9 +285,9 @@ def cluster_lines(masked_img_connected, lines, suppress_output):
     y = np.zeros((n, 2), dtype = float) # stores all lines' data
     for i in range(lines.shape[0]):
         for x1,y1,x2,y2 in lines[i]:
-            theta = ( math.atan2(abs(y2 - y1), (x2 - x1) * abs(y2 - y1) / (y2 - y1)) / np.pi * 180.0 )
+            theta = ( math.atan2(abs(y2 - y1), (x2 - x1) * abs(y2 - y1) / (y2 - y1)) / np.pi * 180.0)
             intercept = ((x1 - x2) * (y0 - y1) / (y1 - y2)) + x1
-            y[i, :] = [theta, intercept] # intercept: x value at y = y0
+            y[i, :] = [theta * downscale, intercept] # intercept: x value at y = y0
 
     # 2. perform clustering
     z = cluster.hierarchy.centroid(y) # finish clustering
@@ -322,7 +322,7 @@ def cluster_lines(masked_img_connected, lines, suppress_output):
         sum_theta = 0
         tot = len(each_cluster)
         for each_line in each_cluster:
-            sum_theta += y[each_line, 0]
+            sum_theta += y[each_line, 0] / downscale
             sum_intercept += y[each_line, 1]
         ave_intercept = sum_intercept / tot
         ave_theta = sum_theta / tot
@@ -429,6 +429,8 @@ def main(filename, dest, suppress_output = None):
         lines = []
         for (k, b) in ave_lines:
             print k, b
+            if abs(k) < 8: # lines not steep enough are not considered
+                continue
             line = adjust(k, b, masked_img_connected.shape[0], masked_img_connected.shape[1], masked_img_connected, suppress_output)
             
             # if only straight line
@@ -440,32 +442,37 @@ def main(filename, dest, suppress_output = None):
 
             lines.append(line)
 
-        # filter through lines, make polyline control points sparser, and convert them to image coordinates
-        final_lines, lines, npx, npy = clean_up(img, orig_img, lines, suppress_output)
+        if lines != []:
 
-        # rescale npx, npy back to original image (not 640*480!) and store in the same shape as lines
-        tot = 0
-        lines_in_img = []
-        for i in range(len(lines)): # lines format: lines = [line1, line2, line3, ...], linei = [(x, y), (x, y), ...]
-            lines_in_img.append([])
-            for j in range(len(lines[i])):
-                if (npx[tot] >= 0) and (npx[tot] < 640) and (npy[tot] >= 0) and (npy[tot] < 480):
-                    lines_in_img[i].append((int(npx[tot] * resize_x), int(npy[tot] * resize_y)))
-                tot += 1
+            # filter through lines, make polyline control points sparser, and convert them to image coordinates
+            final_lines, lines, npx, npy = clean_up(img, orig_img, lines, suppress_output)
 
-        # further convert to ground coordinates:
-        IPM.points_image2ground(npx, npy)
-        tot = 0
-        lines_in_gnd = []
-        for i in range(len(lines)): # lines format: lines = [line1, line2, line3, ...], linei = [(x, y), (x, y), ...]
-            lines_in_gnd.append([])
-            for j in range(len(lines[i])):
-                if (npy[tot] >= 0):
-                    lines_in_gnd[i].append((npx[tot], npy[tot]))
-                tot += 1
+            # rescale npx, npy back to original image (not 640*480!) and store in the same shape as lines
+            tot = 0
+            lines_in_img = []
+            for i in range(len(lines)): # lines format: lines = [line1, line2, line3, ...], linei = [(x, y), (x, y), ...]
+                lines_in_img.append([])
+                for j in range(len(lines[i])):
+                    if (npx[tot] >= 0) and (npx[tot] < 640) and (npy[tot] >= 0) and (npy[tot] < 480):
+                        lines_in_img[i].append((int(npx[tot] * resize_x), int(npy[tot] * resize_y)))
+                    tot += 1
+
+            # further convert to ground coordinates:
+            IPM.points_image2ground(npx, npy)
+            tot = 0
+            lines_in_gnd = []
+            for i in range(len(lines)): # lines format: lines = [line1, line2, line3, ...], linei = [(x, y), (x, y), ...]
+                lines_in_gnd.append([])
+                for j in range(len(lines[i])):
+                    if (npy[tot] >= 0):
+                        lines_in_gnd[i].append((npx[tot], npy[tot]))
+                    tot += 1
+            
+            if suppress_output is None:
+                print lines_in_gnd
         
-        if suppress_output is None:
-            print lines_in_gnd
+        else:
+            lines_in_gnd = []
 
     
     else:

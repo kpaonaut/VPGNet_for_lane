@@ -24,6 +24,11 @@ using namespace cv;
 
 #define UNITY 1
 
+// For good performance, please use the overloaded function parse_config() with UNITY as a parameter
+// to avoid opening the config file all the time.
+// Remember to change all the parameters in parse_config() below to your desired parameters!
+// Change focalLength will only affect the scale in ground coordinates, but will not affect the IPM'ed image itself! (since image can be scaled arbitrarily)
+
 void parse_config(string filename, int &ipmWidth, int &ipmHeight, LaneDetector::CameraInfo* cameraInfo, LaneDetector::IPMInfo &ipmInfo, int options){
     // This reloaded function is to use the constant camera config for Unity
     // so that the program doesn't load the config file every time

@@ -1,6 +1,6 @@
 # Notice: this program works well for lane output of continuous lines. All parameters are tuned
 # for the test data in /lane/lane_test_data/outputForConnectedWideDash
-# usage example: python lane_extension_polyline_for_MultiNet.py lifeng/4.png
+# usage example: python lane_extension_polyline_for_MultiNet.py unity/4.png
 import cv2
 import numpy as np
 import math
@@ -412,7 +412,30 @@ def clean_up(img, orig_img, lines, suppress_output):
 
     return final_lines, lines, npx, npy
 
-def main(filename, dest, suppress_output = None):
+def scale_back(lines, npx, npy, resize_x, resize_y):
+    tot = 0
+    lines_in_img = []
+    for i in range(len(lines)): # lines format: lines = [line1, line2, line3, ...], linei = [(x, y), (x, y), ...]
+        lines_in_img.append([])
+        for j in range(len(lines[i])):
+            if (npx[tot] >= 0) and (npx[tot] < 640) and (npy[tot] >= 0) and (npy[tot] < 480):
+                lines_in_img[i].append((int(npx[tot] * resize_x), int(npy[tot] * resize_y)))
+            tot += 1
+    return lines_in_img
+
+def convert_img2gnd(npx, npy):
+    IPM.points_image2ground(npx, npy)
+    tot = 0
+    lines_in_gnd = []
+    for i in range(len(lines)): # lines format: lines = [line1, line2, line3, ...], linei = [(x, y), (x, y), ...]
+        lines_in_gnd.append([])
+        for j in range(len(lines[i])):
+            if (npy[tot] >= 0):
+                lines_in_gnd[i].append((npx[tot], npy[tot]))
+            tot += 1
+    return lines_in_gnd
+
+def main(filename, dest, adjust, suppress_output = None):
 
     # threshold + resize
     img, masked_img_connected, orig_img, resize_x, resize_y = preprocess(filename, 'connected', suppress_output) # img: ipm'ed image
@@ -420,25 +443,33 @@ def main(filename, dest, suppress_output = None):
         cv2.imwrite("o.png", orig_img)
         orig_img = cv2.imread("o.png")
 
+    # initial line extraction: with opencv HoughLines algorithm
     lines = houghlines(masked_img_connected, img, suppress_output)
+
     if lines is not None:
 
-        ave_lines = cluster_lines(masked_img_connected, lines, suppress_output)
+        ave_lines = cluster_lines(masked_img_connected, lines, suppress_output) # cluster results from houghlines
 
         # further adjust all lines to the middle
         lines = []
         for (k, b) in ave_lines:
-            print k, b
-            if abs(k) < 8: # lines not steep enough are not considered
-                continue
-            line = adjust(k, b, masked_img_connected.shape[0], masked_img_connected.shape[1], masked_img_connected, suppress_output)
-            
-            # if only straight line
-            line = []
-            y = 0
-            while y < masked_img_connected.shape[0] - 1:
-                y += 10
-                line.append((int((y - b)/k), y))
+            if suppress_output is None:
+                print k, b
+
+            if adjust:
+                # do adjustment (refinement)
+                line = adjust(k, b, masked_img_connected.shape[0], masked_img_connected.shape[1], masked_img_connected, suppress_output)
+            else:
+                # only use straight line, don't do refinement
+                if abs(k) < 8: # lines not steep enough are not considered
+                # Note: filtering by abs(k) only works when the vehicle is facing forward
+                # FIXME: if the vehicle is not facing straight forward (e.g. during lane change), will need to filter by the deviation of theta from the general road direction
+                    continue
+                line = []
+                y = 0
+                while y < masked_img_connected.shape[0] - 1:
+                    y += 10
+                    line.append((int((y - b)/k), y))
 
             lines.append(line)
 
@@ -448,25 +479,10 @@ def main(filename, dest, suppress_output = None):
             final_lines, lines, npx, npy = clean_up(img, orig_img, lines, suppress_output)
 
             # rescale npx, npy back to original image (not 640*480!) and store in the same shape as lines
-            tot = 0
-            lines_in_img = []
-            for i in range(len(lines)): # lines format: lines = [line1, line2, line3, ...], linei = [(x, y), (x, y), ...]
-                lines_in_img.append([])
-                for j in range(len(lines[i])):
-                    if (npx[tot] >= 0) and (npx[tot] < 640) and (npy[tot] >= 0) and (npy[tot] < 480):
-                        lines_in_img[i].append((int(npx[tot] * resize_x), int(npy[tot] * resize_y)))
-                    tot += 1
+            lines_in_img = scale_back(lines, npx, npy, resize_x, resize_y)
 
-            # further convert to ground coordinates:
-            IPM.points_image2ground(npx, npy)
-            tot = 0
-            lines_in_gnd = []
-            for i in range(len(lines)): # lines format: lines = [line1, line2, line3, ...], linei = [(x, y), (x, y), ...]
-                lines_in_gnd.append([])
-                for j in range(len(lines[i])):
-                    if (npy[tot] >= 0):
-                        lines_in_gnd[i].append((npx[tot], npy[tot]))
-                    tot += 1
+            # further convert to ground coordinates: (real-world)
+            lines_in_gnd = convert_img2gnd(npx, npy)
             
             if suppress_output is None:
                 print lines_in_gnd
@@ -481,4 +497,4 @@ def main(filename, dest, suppress_output = None):
     return lines_in_gnd
 
 if __name__ == "__main__":
-    main(sys.argv[1], '.', None)
+    main(sys.argv[1], '.', adjust = False, None)

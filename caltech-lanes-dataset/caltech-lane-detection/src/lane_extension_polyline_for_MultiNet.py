@@ -12,7 +12,7 @@ import sys
 # define parameters:
 downscale = 4.0 # 0.3 default
 upscale = 1.0 / downscale
-cluster_threshold = int(4 * 3.33 / upscale)
+cluster_threshold = int(2.5 * 3.33 / upscale)
 # adjustable params:
 # mask geometry
 # houghLinesP parms
@@ -109,14 +109,25 @@ def preprocess(filename, line_type, suppress_output):
     x_size = thresh_img.shape[1]
     y_size = thresh_img.shape[0]
     mask = np.zeros_like(thresh_img)
-    pt1 = (0, 0) # specify 8 vertices of the (U-shaped, concave) mask
-    pt2 = (int(0.01 * x_size), 0)
-    pt3 = (pt2[0], int(0.1 * y_size)) # default 0.57
-    pt4 = (int(0.99 * x_size), pt3[1])
-    pt5 = (pt4[0], 0)
-    pt6 = (x_size - 1, 0)
+    
+    # pt1 = (0, 0) # specify 8 vertices of the (U-shaped, concave) mask
+    # pt2 = (int(0.01 * x_size), 0)
+    # pt3 = (pt2[0], int(0.1 * y_size)) # default 0.57
+    # pt4 = (int(0.99 * x_size), pt3[1])
+    # pt5 = (pt4[0], 0)
+    # pt6 = (x_size - 1, 0)
+    # pt7 = (x_size - 1, int(y_size * 1))
+    # pt8 = (0, int(y_size * 1))
+
+    pt1 = (0, int(0.1 * y_size)) # specify 8 vertices of the (U-shaped, concave) mask
+    pt2 = (int(0.4 * x_size), int(0.1 * y_size))
+    pt3 = (pt2[0], int(0.01 * y_size)) # default 0.57
+    pt4 = (int(0.6 * x_size), pt3[1])
+    pt5 = (pt4[0], int(0.1 * y_size))
+    pt6 = (x_size - 1, int(0.1 * y_size))
     pt7 = (x_size - 1, int(y_size * 1))
-    pt8 = (0, int(y_size * 1))
+    pt8 = (0, y_size - 1)
+
     vertices = np.array([[pt1, pt2, pt3, pt4, pt5, pt6, pt7, pt8]])
     mask = cv2.fillPoly(mask, vertices, 255)
     if APPLY_MASK:
@@ -247,8 +258,8 @@ def houghlines(masked_img_connected, img, suppress_output):
     # Perform houghlines on connected lines
     rho = 1
     theta = np.pi / 180 / 2 # resolution: 0.5 degree
-    threshold = int(20 * downscale)
-    min_line_length = int(60 * downscale) # line length
+    threshold = int(60 * downscale) # the number of votes (voted by random points on the picture)
+    min_line_length = int(100 * downscale) # line length
     max_line_gap = 10000 # the gap between points on the line 
     lines = cv2.HoughLinesP(masked_img_connected, rho, theta, threshold, np.array([]), min_line_length, max_line_gap) # find the lines
 
@@ -263,7 +274,7 @@ def houghlines(masked_img_connected, img, suppress_output):
 
     # plot the original hughlinesP result!
     if suppress_output is None:
-        hough_img = img.copy()
+        hough_img = masked_img_connected.copy()
         cv2.imwrite('houghlines_raw.png', hough_img)
         hough_img = cv2.imread('houghlines_raw.png') # convert gray scale to BGR
         if lines is None: return []
@@ -280,7 +291,7 @@ def houghlines(masked_img_connected, img, suppress_output):
 def cluster_lines(masked_img_connected, lines, suppress_output):
     # filter the results, lines too close will be taken as one line!
     # 1. convert the lines to angle-intercept space - NOTE: intercept is on x-axis on the bottom of the image!
-    y0 = int(0.67 * masked_img_connected.shape[0])
+    y0 = int(0.6 * masked_img_connected.shape[0])
     n = lines.shape[0]
     y = np.zeros((n, 2), dtype = float) # stores all lines' data
     for i in range(lines.shape[0]):
@@ -347,6 +358,53 @@ def cluster_lines(masked_img_connected, lines, suppress_output):
         print "cluster representatives all printed!"
 
     return ave_lines
+
+def cluster_directions(ave_lines):
+    n = len(ave_lines)
+    y = np.zeros((n, 1), dtype = float)
+    for i, (k, b) in enumerate(ave_lines):
+        y[i] = math.atan2(abs(k), abs(k)/k) / np.pi * 180
+    z = cluster.hierarchy.linkage(y, method='single', metric='euclidean')
+
+    ending = 0
+    cluster_threshold = 5 # override the globally defined cluster_threshold for houghlines clustering
+    while ending < z.shape[0] and z[ending, 2] < cluster_threshold: # cluster distance < 10, continue clustering!
+        ending += 1
+    ending -= 1 # the last cluster where distance < 10
+
+    # below: figure out which direction belongs to which cluster
+    clustered = np.zeros((n), dtype = int) # each line, whether clustered
+    cluster_id = -1
+    clusters = []
+    checked = np.zeros((n), dtype = int) # each element in z, whether checked
+    for i in range(ending, -1, -1):
+        if not checked[i]:
+            clusters.append([])
+            cluster_id += 1
+            check(z, i, n, clustered, checked, clusters, cluster_id) # recursively obtain all members in a cluster
+
+    for i in range(n):
+        if not clustered[i]:
+            clusters.append([i]) # directions not clusterd will be a single cluster
+
+    max_cluster_size = 0
+    max_cluster_id = 0
+    for i, clustered_lines in enumerate(clusters):
+        l = len(clustered_lines)
+        if l > max_cluster_size:
+            max_cluster_size = l
+            max_cluster_id = i
+
+    print z
+    print clusters
+    # print max_cluster_id
+
+    filtered_lines = []
+    for line_id in clusters[max_cluster_id]:
+        filtered_lines.append(ave_lines[line_id])
+
+    # print filtered_lines
+    return filtered_lines
 
 def clean_up(img, orig_img, lines, suppress_output):
     # plot the result on original picture
@@ -451,7 +509,12 @@ def main(filename, dest, do_adjust, suppress_output = None):
         ave_lines = cluster_lines(masked_img_connected, lines, suppress_output) # cluster results from houghlines
 
         # further adjust all lines to the middle
+        if not do_adjust:
+            # need to further cluster and filter out the lines that are noises! only retain the largest cluster this time!
+            ave_lines = cluster_directions(ave_lines)
+
         lines = []
+
         for (k, b) in ave_lines:
             if suppress_output is None:
                 print k, b
@@ -461,15 +524,11 @@ def main(filename, dest, do_adjust, suppress_output = None):
                 line = adjust(k, b, masked_img_connected.shape[0], masked_img_connected.shape[1], masked_img_connected, suppress_output)
             else:
                 # only use straight line, don't do refinement
-                if abs(k) < 8: # lines not steep enough are not considered
-                # Note: filtering by abs(k) only works when the vehicle is facing forward
-                # FIXME: if the vehicle is not facing straight forward (e.g. during lane change), will need to filter by the deviation of theta from the general road direction
-                    continue
                 line = []
-                y = 0
-                while y < masked_img_connected.shape[0] - 1:
-                    y += 40
+                y = masked_img_connected.shape[0] - 1
+                while y >= 40:
                     line.append((int((y - b)/k), y))
+                    y -= 40
 
             lines.append(line)
 

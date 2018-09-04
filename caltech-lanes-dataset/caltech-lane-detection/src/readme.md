@@ -15,4 +15,4 @@ camera parameter configuration for Unity & HD Map:
 modify in `IPM.cpp`
 camera parameter configuration for general usage (perform IPM on other tasks):
 modify in `camera.conf`
-**Notice**: In `IPM.cpp`, there are two reloaded functions `parse_config()`. The version which reads from file is slower and can't be used for batch processing since it requires file I/O everytime.
+**Notice**: In `IPM.cpp`, there are two overloaded functions `parse_config()`. The version which reads from file is slower and can't be used for batch processing since it requires file I/O everytime.

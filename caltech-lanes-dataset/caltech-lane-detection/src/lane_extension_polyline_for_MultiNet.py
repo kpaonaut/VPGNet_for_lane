@@ -423,7 +423,7 @@ def scale_back(lines, npx, npy, resize_x, resize_y):
             tot += 1
     return lines_in_img
 
-def convert_img2gnd(npx, npy):
+def convert_img2gnd(npx, npy, lines):
     IPM.points_image2ground(npx, npy)
     tot = 0
     lines_in_gnd = []
@@ -435,7 +435,7 @@ def convert_img2gnd(npx, npy):
             tot += 1
     return lines_in_gnd
 
-def main(filename, dest, adjust, suppress_output = None):
+def main(filename, dest, do_adjust, suppress_output = None):
 
     # threshold + resize
     img, masked_img_connected, orig_img, resize_x, resize_y = preprocess(filename, 'connected', suppress_output) # img: ipm'ed image
@@ -456,7 +456,7 @@ def main(filename, dest, adjust, suppress_output = None):
             if suppress_output is None:
                 print k, b
 
-            if adjust:
+            if do_adjust:
                 # do adjustment (refinement)
                 line = adjust(k, b, masked_img_connected.shape[0], masked_img_connected.shape[1], masked_img_connected, suppress_output)
             else:
@@ -468,7 +468,7 @@ def main(filename, dest, adjust, suppress_output = None):
                 line = []
                 y = 0
                 while y < masked_img_connected.shape[0] - 1:
-                    y += 10
+                    y += 40
                     line.append((int((y - b)/k), y))
 
             lines.append(line)
@@ -482,7 +482,7 @@ def main(filename, dest, adjust, suppress_output = None):
             lines_in_img = scale_back(lines, npx, npy, resize_x, resize_y)
 
             # further convert to ground coordinates: (real-world)
-            lines_in_gnd = convert_img2gnd(npx, npy)
+            lines_in_gnd = convert_img2gnd(npx, npy, lines)
             
             if suppress_output is None:
                 print lines_in_gnd
@@ -497,4 +497,4 @@ def main(filename, dest, adjust, suppress_output = None):
     return lines_in_gnd
 
 if __name__ == "__main__":
-    main(sys.argv[1], '.', adjust = False, None)
+    main(sys.argv[1], '.', do_adjust = False, suppress_output = None)

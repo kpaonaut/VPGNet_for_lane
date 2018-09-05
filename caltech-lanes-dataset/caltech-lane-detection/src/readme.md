@@ -16,3 +16,13 @@ modify in `IPM.cpp`
 camera parameter configuration for general usage (perform IPM on other tasks):
 modify in `camera.conf`
 **Notice**: In `IPM.cpp`, there are two overloaded functions `parse_config()`. The version which reads from file is slower and can't be used for batch processing since it requires file I/O everytime.
+
+Here is a list of parameters for c++ and python that optimizes the performance for straight line only (withou adjustment):
+For `camera.conf`
+vpPortion = 0.045
+For `houghlines()`
+threshold = int(60 * downscale) # the number of votes (voted by random points on the picture)
+min_line_length = int(100 * downscale) # line length
+For `cluster_lines()`
+cluster_threshold = int(2.5 * 3.33 / upscale)
+For `cluster_directions()`

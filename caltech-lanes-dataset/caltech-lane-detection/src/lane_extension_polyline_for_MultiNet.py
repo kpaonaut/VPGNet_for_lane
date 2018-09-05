@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
 # Notice: this program works well for lane output of continuous lines. All parameters are tuned
 # for the test data in /lane/lane_test_data/outputForConnectedWideDash
 # usage example: python lane_extension_polyline_for_MultiNet.py unity/4.png
@@ -18,6 +21,11 @@ cluster_threshold = int(2.5 * 3.33 / upscale)
 # houghLinesP parms
 
 def check(z, i, n, clustered, checked, clusters, cluster_id):
+    """
+    Figures out which member belongs to which cluster after the scipy lib carries out the clustering algorithm
+    and stores the process of the clustering in z
+    See detailed usage in the example below in cluster_lines(), where this function is called
+    """
 
     if z[i, 0] < n and z[i, 1] < n:
         checked[i] = 1
@@ -110,6 +118,7 @@ def preprocess(filename, line_type, suppress_output):
     y_size = thresh_img.shape[0]
     mask = np.zeros_like(thresh_img)
     
+    # below: a mask of shape 凹
     # pt1 = (0, 0) # specify 8 vertices of the (U-shaped, concave) mask
     # pt2 = (int(0.01 * x_size), 0)
     # pt3 = (pt2[0], int(0.1 * y_size)) # default 0.57
@@ -119,6 +128,7 @@ def preprocess(filename, line_type, suppress_output):
     # pt7 = (x_size - 1, int(y_size * 1))
     # pt8 = (0, int(y_size * 1))
 
+    # below: a mask of shape 凸
     pt1 = (0, int(0.1 * y_size)) # specify 8 vertices of the (U-shaped, concave) mask
     pt2 = (int(0.4 * x_size), int(0.1 * y_size))
     pt3 = (pt2[0], int(0.01 * y_size)) # default 0.57
@@ -145,6 +155,22 @@ def adjust(k, b, y_size, x_size, img, suppress_output):
     """
 
     # line function: y = kx + b
+
+    def update_step(dx_new, dy_new, x, y, line, dx, dy, length, theta_old, x0, y0):
+        """
+        update the direction of the line along the way. update dx, dy.
+        """
+        dl_new = math.sqrt(dx_new ** 2.0 + dy_new ** 2.0)
+        dx_new /= dl_new
+        dy_new /= dl_new
+        theta_new = math.atan2(dx_new, dy_new)
+        line.append((x, y))
+        x0 = x
+        y0 = y
+        length = 0
+        return dx, dy, length, theta_old, x0, y0, line
+
+
     line = []
     if (k < 0) and (b < y_size - 1):
         x0 = 0
@@ -177,6 +203,12 @@ def adjust(k, b, y_size, x_size, img, suppress_output):
     x = (l + r) / 2
     line.append((x, y)) # found the first point *on* the lane marking
     length = 0
+    if img[y, x] == 255:
+        already_white = True # maintain current step status: on a white lane marking or in a space
+        white_entrance = (x, y) # record where the line enters the current white marking
+    else:
+        already_white = False
+    theta_old = math.atan2(dy, dx)
 
     # the 0.4, 0.6, 0.4 are define the mask we are applying
     # has to be lower than vanishing point, or the ipm'ed polyline's end point will be negative
@@ -201,22 +233,19 @@ def adjust(k, b, y_size, x_size, img, suppress_output):
 
         if x < x_size - 1 and x > 0 and y > 0 and y < y_size - 1:
             if img[y, x] == 255:
+                if not already_white:
+                    already_white = True # maintain current step status: on a white lane marking or in a space
+                    white_entrance = (x, y)
                 l = x
                 r = x
                 while img[y, l] == 255 and l > 0: l -= 1
                 while img[y, r] == 255 and r < x_size - 1: r += 1
-                if (abs(((l + r) / 2) - x) > (r - l) / 6) and abs(dy) > 0.01: # if the deviation is too large from the center of the lane marker
+                if (abs(((l + r) / 2) - x) > (r - l) / 20) and abs(dy) > 0.01: # if the deviation is too large from the center of the lane marker
                 # if dy < 0.05, the line is too flat. will not adjust x to middle
                     x = (l + r) / 2
-                    line.append((x, y))
-                    length = 0
-                    dx = (x - x0)
-                    dy = (y - y0)
-                    dl = math.sqrt(dx ** 2.0 + dy ** 2.0)
-                    dx /= dl
-                    dy /= dl
-                    x0 = x
-                    y0 = y
+                    dx_new = (x - x0)
+                    dy_new = (y - y0)
+                    dx, dy, length, theta_old, x0, y0, line = update_step(dx_new, dy_new, x, y, line, dx, dy, length, theta_old, x0, y0)
                 else:
                     line.append((x, y))
             else:
@@ -233,7 +262,11 @@ def adjust(k, b, y_size, x_size, img, suppress_output):
                     step_r += 1
                     if img[y, r] == 255: break
                 if img[y, r] == 0 and img[y, l] == 0: # there is a space here!
-                    pass # line.append((x, y))
+                    if already_white:
+                        already_white = False
+                        dx_new = (x - white_entrance[0])
+                        dy_new = (y - white_entrance[1])
+                        dx, dy, length, theta_old, x0, y0, line = update_step(dx_new, dy_new, x, y, line, dx, dy, length, theta_old, x0, y0)
                 else:
                     if step_r < step_l:
                         l = r
@@ -242,20 +275,14 @@ def adjust(k, b, y_size, x_size, img, suppress_output):
                     while img[y, l] == 255 and l > 0: l -= 1
                     while img[y, r] == 255 and r < x_size - 1: r += 1
                     x = (l + r) / 2
-                    line.append((x, y))
-                    length = 0
-                    dx = (x - x0)
-                    dy = (y - y0)
-                    dl = math.sqrt(dx ** 2.0 + dy ** 2.0)
-                    dx /= dl
-                    dy /= dl
-                    x0 = x
-                    y0 = y
+                    dx_new = (x - x0)
+                    dy_new = (y - y0)
+                    dx, dy, length, theta_old, x0, y0, line = update_step(dx_new, dy_new, x, y, line, dx, dy, length, theta_old, x0, y0)
                     
     return line
 
 def houghlines(masked_img_connected, img, suppress_output):
-    # Perform houghlines on connected lines
+    """Performs houghlines algorithm"""
     rho = 1
     theta = np.pi / 180 / 2 # resolution: 0.5 degree
     threshold = int(60 * downscale) # the number of votes (voted by random points on the picture)
@@ -289,6 +316,10 @@ def houghlines(masked_img_connected, img, suppress_output):
     return lines
 
 def cluster_lines(masked_img_connected, lines, suppress_output):
+    """
+    Clusters the results from houghlines(), lines too close will be clustered into one line.
+    "centroid", distances from cluster is determined by the distance of centroids.
+    """
     # filter the results, lines too close will be taken as one line!
     # 1. convert the lines to angle-intercept space - NOTE: intercept is on x-axis on the bottom of the image!
     y0 = int(0.6 * masked_img_connected.shape[0])
@@ -360,6 +391,15 @@ def cluster_lines(masked_img_connected, lines, suppress_output):
     return ave_lines
 
 def cluster_directions(ave_lines):
+    """
+    Further cluster the lines according to their inclination only.
+
+    Based on the assumption that most lane markings are parallel,
+    we filter the noise by thresholding. The lane markings whose
+    inclination is too different from others will be picked out by
+    the clustering algorithm("single", distance is determined by the closest point) 
+    and taken as noises.
+    """
     n = len(ave_lines)
     y = np.zeros((n, 1), dtype = float)
     for i, (k, b) in enumerate(ave_lines):
@@ -507,11 +547,8 @@ def main(filename, dest, do_adjust, suppress_output = None):
     if lines is not None:
 
         ave_lines = cluster_lines(masked_img_connected, lines, suppress_output) # cluster results from houghlines
-
-        # further adjust all lines to the middle
-        if not do_adjust:
-            # need to further cluster and filter out the lines that are noises! only retain the largest cluster this time!
-            ave_lines = cluster_directions(ave_lines)
+        # further cluster and filter out the lines that are noises! only retain the largest cluster whose inclinations are close enough
+        ave_lines = cluster_directions(ave_lines)
 
         lines = []
 
@@ -520,7 +557,7 @@ def main(filename, dest, do_adjust, suppress_output = None):
                 print k, b
 
             if do_adjust:
-                # do adjustment (refinement)
+                # do adjustment (refinement), further adjust all lines to the middle
                 line = adjust(k, b, masked_img_connected.shape[0], masked_img_connected.shape[1], masked_img_connected, suppress_output)
             else:
                 # only use straight line, don't do refinement
@@ -556,4 +593,4 @@ def main(filename, dest, do_adjust, suppress_output = None):
     return lines_in_gnd
 
 if __name__ == "__main__":
-    main(sys.argv[1], '.', do_adjust = False, suppress_output = None)
+    main(sys.argv[1], '.', do_adjust = True, suppress_output = None)

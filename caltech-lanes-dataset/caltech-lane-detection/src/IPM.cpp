@@ -214,8 +214,8 @@ scale_xy points_image2ground(int n, float *points_x, int m, float *points_y){ //
     int ipmWidth = 640; // default, to be changed by parse_config function
     int ipmHeight = 480;
     string filename = "camera.conf";
-    //parse_config(filename, ipmWidth, ipmHeight, cameraInfo, ipmInfo); // get rid of "UNITY" if you want to use config in file
-    parse_config(filename, ipmWidth, ipmHeight, cameraInfo, ipmInfo, UNITY); // get rid of "UNITY" if you want to use config in file
+    parse_config(filename, ipmWidth, ipmHeight, cameraInfo, ipmInfo); // get rid of "UNITY" if you want to use config in file
+    //parse_config(filename, ipmWidth, ipmHeight, cameraInfo, ipmInfo, UNITY); // get rid of "UNITY" if you want to use config in file
 
     // FLOAT_MAT_ELEM_TYPE uv[] = {pt1.x, pt2.x, pt1.y, pt2.y};
     FLOAT_MAT_ELEM_TYPE uv[2 * n];
@@ -244,8 +244,8 @@ scale_xy points_ipm2image(int n, float *points_x, int m, float *points_y){ // n 
     int ipmHeight = 480;
     string filename = "camera.conf";
     
-    //parse_config(filename, ipmWidth, ipmHeight, cameraInfo, ipmInfo);
-    parse_config(filename, ipmWidth, ipmHeight, cameraInfo, ipmInfo, UNITY); // get rid of "UNITY" if you want to use config in file
+    parse_config(filename, ipmWidth, ipmHeight, cameraInfo, ipmInfo);
+    //parse_config(filename, ipmWidth, ipmHeight, cameraInfo, ipmInfo, UNITY); // get rid of "UNITY" if you want to use config in file
 
     scale_xy step_size = get_resize_scale(ipmWidth, ipmHeight, &ipmInfo, cameraInfo);
 
@@ -286,8 +286,8 @@ void image_ipm(float *input, int h_in, int w_in, float *output, int h, int w){ /
     int ipmHeight = 480;
     string filename = "camera.conf";
 
-    //parse_config(filename, ipmWidth, ipmHeight, cameraInfo, ipmInfo);
-    parse_config(filename, ipmWidth, ipmHeight, cameraInfo, ipmInfo, UNITY); // get rid of "UNITY" if you want to use config in file
+    parse_config(filename, ipmWidth, ipmHeight, cameraInfo, ipmInfo);
+    //parse_config(filename, ipmWidth, ipmHeight, cameraInfo, ipmInfo, UNITY); // get rid of "UNITY" if you want to use config in file
 
     CvMat * ipm = cvCreateMat(ipmHeight, ipmWidth, inImage->type); // the picture after IPM will be stored in ipm
     // execute GetIPM, new image is ipm

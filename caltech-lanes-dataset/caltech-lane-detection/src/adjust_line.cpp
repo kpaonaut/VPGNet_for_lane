@@ -1,25 +1,7 @@
-import numpy as np
-import cv2
-import math
-import time
-
-def adjust(k, b, y_size, x_size, img, downscale):
-    """
-    With a good initial guess, adjust the extracted lane lines along the way to the middle of the lane-marking
-    """
-
-    # line function: y = kx + b
-
-    def update_step(x, y, line, length):
-        """
-        update the direction of the line along the way. update dx, dy.
-        """
-        line.append((x, y))
-        x0 = x
-        y0 = y
-        length = 0
-        return length, x0, y0, line
-
+int* adjust(float k, float b, int y_size, int x_size, int downscale, int* img, int m, int n)
+{
+    // With a good initial guess, adjust the extracted lane lines along the way to the middle of the lane-marking
+    // line function: y = kx + b
     line = []
     if (k < 0) and (b < y_size - 1):
         x0 = 0
@@ -126,4 +108,5 @@ def adjust(k, b, y_size, x_size, img, downscale):
                     
     time2 = time.time()
     print "ADJUST TIMEEEEEEEEE", time2 - time1
-    return line
+    return line;
+}

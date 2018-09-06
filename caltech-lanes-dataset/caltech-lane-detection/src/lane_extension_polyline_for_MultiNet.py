@@ -17,9 +17,9 @@ from adjust import adjust
 # define parameters:
 downscale = 1.0 # 0.3 default
 upscale = 1.0 / downscale
-# adjustable params:
-# mask geometry
-# houghLinesP parms
+image_size_rescale = 4 # when the image for ipm is 640 * 480, this var is 1 (defined in camera.conf)
+                       # when the image for ipm is 160 * 120, this var is 4
+                       # remember to modify all parameters in camera.conf to fit this data!
 
 def check(z, i, n, clustered, checked, clusters, cluster_id):
     """
@@ -92,10 +92,12 @@ def preprocess(file, line_type, suppress_output): # 0.006s
     '''pre-process the image of connected lines, final result masked_img'''
 
     # NOTICE! picture has to be float when passed into IPM cpp, return value is also float!
+    # the image for adjust() is always 640 * 480
+
     tmp = cv2.cvtColor(file, cv2.COLOR_BGR2GRAY)
     ret, tmp = cv2.threshold(tmp, 60, 255, cv2.THRESH_BINARY)
     resize_x, resize_y = tmp.shape[1] / 640.0, tmp.shape[0] / 480.0
-    tmp = cv2.resize(tmp, (160, 120))
+    tmp = cv2.resize(tmp, (640 / image_size_rescale, 480 / image_size_rescale)) # resize to smaller img for fast ipm
     original_img = cv2.resize(tmp, (640, 480))
     tmp = tmp.astype(dtype = np.float32, copy = False)
     img = np.zeros(tmp.shape[0:2], dtype = np.float32)
@@ -157,8 +159,8 @@ def houghlines(masked_img_connected, img, suppress_output):
     scale = 0.175 # scale the pic to perform houghlinesP, for speed!
     rho = 1
     theta = np.pi / 180 / 2 # resolution: 0.5 degree
-    threshold = int(60 * scale * downscale) # int(60 * downscale) # the number of votes (voted by random points on the picture)
-    min_line_length = int(100 * scale * downscale)# int(100 * downscale) # line length
+    threshold = int(60 * scale * downscale) # the number of votes (voted by random points on the picture)
+    min_line_length = int(100 * scale * downscale) # line length
     max_line_gap = 10000 # the gap between points on the line, no limit here 
     masked_img_connected = cv2.resize(masked_img_connected, (0, 0), fx = scale, fy = scale)
     time1 = time.time()
@@ -361,11 +363,11 @@ def clean_up(img, orig_img, lines, suppress_output):
             k = (y2 - y1)/(x2 - x1 + 0.0001)
             b = y1 - x1*(y2 - y1)/(x2-x1+0.0001) # y = kx + b
             final_lines.append((k, b)) # collect all lines for evaluation
-            draw_lines_x.append(x1 * upscale / 4.0) # collect all lines for IPM
-            draw_lines_y.append(y1 * upscale / 4.0)
+            draw_lines_x.append(x1 * upscale / image_size_rescale) # collect all lines for IPM
+            draw_lines_y.append(y1 * upscale / image_size_rescale)
             if i == len(line) - 2:
-                draw_lines_x.append(x2 * upscale / 4.0)
-                draw_lines_y.append(y2 * upscale / 4.0)
+                draw_lines_x.append(x2 * upscale / image_size_rescale)
+                draw_lines_y.append(y2 * upscale / image_size_rescale)
 
     # ipm takes in an image of 160*120, lines here is within image of 640 * 480
 
@@ -378,7 +380,8 @@ def clean_up(img, orig_img, lines, suppress_output):
         tot = 0
         for line in lines: # lines format: lines = [line1, line2, line3, ...], linei = [(x, y), (x, y), ...]
             for i in range(len(line) - 1):
-                cv2.line(orig_img, (int(npx[tot]*4), int(npy[tot]*4)), (int(npx[tot+1]*4), int(npy[tot+1]*4)), (0, 0, 255), 1)
+                cv2.line(orig_img, (int(npx[tot]*image_size_rescale), int(npy[tot]*image_size_rescale)), \
+                    (int(npx[tot+1]*image_size_rescale), int(npy[tot+1]*image_size_rescale)), (0, 0, 255), 1)
                 tot += 1
             tot += 1
 
@@ -483,4 +486,4 @@ def main(filename, dest, do_adjust, suppress_output = None):
     return lines_in_gnd
 
 if __name__ == "__main__":
-    main(sys.argv[1], '.', do_adjust = True, suppress_output = 1)
+    main(sys.argv[1], '.', do_adjust = True, suppress_output = None)

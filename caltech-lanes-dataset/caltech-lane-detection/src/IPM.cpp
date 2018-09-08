@@ -152,12 +152,15 @@ void parse_config(string filename, int &ipmWidth, int &ipmHeight, LaneDetector::
 }
 
 struct scale_xy{
-    double step_x, step_y;
+    double step_x, step_y, xfMax, xfMin, yfMax, yfMin;
+    int ipmWidth, ipmHeight;
 };
 
 double _xfMax, _xfMin, _yfMax, _yfMin; // global var for use in other functions
 scale_xy get_resize_scale(int width, int height, LaneDetector::IPMInfo* ipmInfo, LaneDetector::CameraInfo* cameraInfo){
     // find the scale between ground coord and ipm image (dim_ground / scale = dim_ipm)
+    // x in ground = ((x in ipm - ipmWidth / 2) * step_x + (_xfMax + _xfMin) / 2.0)
+    // y in ground = ((ipmHeight - y in ipm) * step_y + _yfMin)
 
     FLOAT u, v;
     v = height;
@@ -203,6 +206,12 @@ scale_xy get_resize_scale(int width, int height, LaneDetector::IPMInfo* ipmInfo,
     scale_xy scale;
     scale.step_x = stepCol;
     scale.step_y = stepRow;
+    scale.xfMax = xfMax;
+    scale.xfMin = xfMin;
+    scale.yfMax = yfMax;
+    scale.yfMin = yfMin;
+    scale.ipmWidth = width;
+    scale.ipmHeight = height;
 
     return scale;
 }
@@ -268,7 +277,7 @@ scale_xy points_ipm2image(int n, float *points_x, int m, float *points_y){ // n 
     return step_size;
 }
 
-void image_ipm(float *input, int h_in, int w_in, float *output, int h, int w){ // convert image to ipm'ed image
+scale_xy image_ipm(float *input, int h_in, int w_in, float *output, int h, int w){ // convert image to ipm'ed image
 
     CvMat converted_img = cvMat(h_in, w_in, FLOAT_MAT_TYPE, input); // gray image
 
@@ -305,7 +314,7 @@ void image_ipm(float *input, int h_in, int w_in, float *output, int h, int w){ /
             output[i * w + j] = (output_img.at<float>(i, j));
         }
 
-    return;
+    return get_resize_scale(ipmWidth, ipmHeight, &ipmInfo, cameraInfo);
 }
 
 string type2str(int type) { // get image type

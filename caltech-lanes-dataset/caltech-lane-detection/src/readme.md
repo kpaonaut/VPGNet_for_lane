@@ -26,3 +26,4 @@ min_line_length = int(100 * downscale) # line length
 For `cluster_lines()`
 cluster_threshold = int(2.5 * 3.33 / upscale)
 For `cluster_directions()`
+cluster_threshold = 5

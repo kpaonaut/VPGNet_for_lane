@@ -104,6 +104,30 @@ class scale_xy(_object):
     __swig_getmethods__["step_y"] = _IPM.scale_xy_step_y_get
     if _newclass:
         step_y = _swig_property(_IPM.scale_xy_step_y_get, _IPM.scale_xy_step_y_set)
+    __swig_setmethods__["xfMax"] = _IPM.scale_xy_xfMax_set
+    __swig_getmethods__["xfMax"] = _IPM.scale_xy_xfMax_get
+    if _newclass:
+        xfMax = _swig_property(_IPM.scale_xy_xfMax_get, _IPM.scale_xy_xfMax_set)
+    __swig_setmethods__["xfMin"] = _IPM.scale_xy_xfMin_set
+    __swig_getmethods__["xfMin"] = _IPM.scale_xy_xfMin_get
+    if _newclass:
+        xfMin = _swig_property(_IPM.scale_xy_xfMin_get, _IPM.scale_xy_xfMin_set)
+    __swig_setmethods__["yfMax"] = _IPM.scale_xy_yfMax_set
+    __swig_getmethods__["yfMax"] = _IPM.scale_xy_yfMax_get
+    if _newclass:
+        yfMax = _swig_property(_IPM.scale_xy_yfMax_get, _IPM.scale_xy_yfMax_set)
+    __swig_setmethods__["yfMin"] = _IPM.scale_xy_yfMin_set
+    __swig_getmethods__["yfMin"] = _IPM.scale_xy_yfMin_get
+    if _newclass:
+        yfMin = _swig_property(_IPM.scale_xy_yfMin_get, _IPM.scale_xy_yfMin_set)
+    __swig_setmethods__["ipmWidth"] = _IPM.scale_xy_ipmWidth_set
+    __swig_getmethods__["ipmWidth"] = _IPM.scale_xy_ipmWidth_get
+    if _newclass:
+        ipmWidth = _swig_property(_IPM.scale_xy_ipmWidth_get, _IPM.scale_xy_ipmWidth_set)
+    __swig_setmethods__["ipmHeight"] = _IPM.scale_xy_ipmHeight_set
+    __swig_getmethods__["ipmHeight"] = _IPM.scale_xy_ipmHeight_get
+    if _newclass:
+        ipmHeight = _swig_property(_IPM.scale_xy_ipmHeight_get, _IPM.scale_xy_ipmHeight_set)
 
     def __init__(self):
         this = _IPM.new_scale_xy()

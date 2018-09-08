@@ -4,13 +4,11 @@ import numpy as np
 import cv2
 import time
 
-t0 = time.time()
-i = 0
-a = np.zeros((200, 200))
-c = []
-while i < 1000:
-	b = a[100][100]
-	c.append(b)
-	i += 1
-t1 = time.time()
-print t1 - t0
+import adjust_line
+
+img = cv2.imread("input.png")
+tmp = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+tmp = np.array(tmp, dtype = np.int32)
+line = np.array([[1,1,1],[1,1,1]], dtype = np.int32)
+adjust_line.adjust(line, 1, 1, 1, tmp)
+print line

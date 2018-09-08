@@ -162,6 +162,7 @@ void mcvGetIPM(const CvMat* inImage, CvMat* outImage,
   //get mean of the input image
   CvScalar means = cvAvg(inImage);
   double mean = means.val[0];
+  // double mean = 0;
   //generic loop to work for both float and int matrix types
   #define MCV_GET_IPM(type) \
   for (i=0; i<outRow; i++) \

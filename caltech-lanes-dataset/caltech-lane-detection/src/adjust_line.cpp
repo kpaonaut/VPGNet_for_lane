@@ -31,6 +31,8 @@ void adjust(int *line, int line_dim1, int line_dim2, float k, float b, float dow
     {
         y0 = y_size - 1;
         x0 = static_cast<int>((y0 - b) / k);
+        //y0 = y_size - y_size * abs(x0 - x_size / 2) / (x_size / 2) - 1;
+        //x0 = static_cast<int>((y0 - b) / k);
     }
     int x = x0; int y = y0; // x, y starts from intercepts at the bottom of the image
 
@@ -38,32 +40,35 @@ void adjust(int *line, int line_dim1, int line_dim2, float k, float b, float dow
     float dx = dy / (k / sqrt(1 + k*k)) * 1.0 / sqrt(1 + k*k);
     int length = 0, step = 0, all_step = 0;
 
-    while ( ((img[y * y_size + x] == 0) || (step < 2)) &&
-        all_step < max(y_size * abs(x - x_size / 2) / (x_size / 2), y_size / 10) )
+    while ( (y > 1 && x > 1 && x < x_size - 2) && ((img[y * x_size + x] == 0) || (step < 2)) 
+            && all_step < 10 * downscale )//(all_step < max( y_size * abs(x0 - x_size / 2) / (x_size / 2), y_size / 10 )) )
     {
         length += 1;
         x = x0 + static_cast<int>(length * dx);
         y = y0 + static_cast<int>(length * dy);
-        if (img[y * y_size + x] == 255)
+        if (img[y * x_size + x] == 255)
             step += 1;
         all_step += 1;
     }
 
+    //printf("size_x: %d, y %d\n", x_size, y_size);
+    //printf("initial x, y: %d %d %d\n", x, y, img[y * x_size + x]);
+
     x0 = x; y0 = y;
     int l = x, r = x;
-    while ((img[y * y_size + l] == 255) && l > 0) l -= 1;
-    while ((img[y * y_size + r] == 255) && r < x_size - 1) r += 1;
-    x = (l + r) / 2;
-    length = 0;
     int tot = 0;
-    if (img[y * y_size + x] == 255)
+    if (img[y * x_size + x] == 255)
     {
+        while ((img[y * x_size + l] == 255) && l > 0) l -= 1;
+        while ((img[y * x_size + r] == 255) && r < x_size - 1) r += 1;
+        x = (l + r) / 2;
+        length = 0;
         line[tot * 2] = x; // found the first point *on* the lane marking
         line[tot * 2 + 1] = y;
         tot ++;
     }
 
-    // the 0.4, 0.6, 0.4 are define the mask we are applying
+    // the 0.4, 0.6, 0.4 are defining the mask we are applying
     // has to be lower than vanishing point, || the ipm'ed polyline's end point will be negative
     int step_l = 0, step_r = 0;
     while ( (x > 0) && (x < x_size - 1) && \
@@ -83,30 +88,39 @@ void adjust(int *line, int line_dim1, int line_dim2, float k, float b, float dow
         }
         if (x < 0 || x > x_size - 1 || y < 0 || y > y_size - 1)
         {
-            length -= 20;
+            length -= 10 * downscale;
             x = x0 + static_cast<int>(length * dx);
             y = y0 + static_cast<int>(length * dy);
-            if (tot * 2 + 1 > line_dim1)
-                throw "Error: polyline points number exceeds 50!";
-            line[tot * 2] = x; // found the first point *on* the lane marking
-            line[tot * 2 + 1] = y;
-            tot ++;
+            if (img[y * x_size + x] == 255)
+            {
+                if (tot * 2 + 1 > line_dim1)
+                {
+                    return;
+                    throw "Error: polyline points number exceeds 50!";
+                }
+                line[tot * 2] = x; // found the first point *on* the lane marking
+                line[tot * 2 + 1] = y;
+                tot ++;
+            }
             break;
         }
 
         if (x < x_size - 1 && x > 0 && y > 0 && y < y_size - 1)
-            if (img[y * y_size + x] == 255)
+            if (img[y * x_size + x] == 255)
             {
                 l = x;
                 r = x;
-                while (img[y * y_size + l] == 255 && l > 0) l -= 1;
-                while (img[y * y_size + r] == 255 && r < x_size - 1) r += 1;
+                while (img[y * x_size + l] == 255 && l > 0) l -= 1;
+                while (img[y * x_size + r] == 255 && r < x_size - 1) r += 1;
                 if ( (abs(((l + r) / 2) - x) > (r - l) / 5) && abs(dy) > 0.01 ) // if the deviation is too large from the center of the lane marker
                 // if dy < 0.05, the line is too flat. will not adjust x to middle
                 {
                     x = (l + r) / 2;
                     if (tot * 2 + 1 > line_dim1)
+                    {
+                        return;
                         throw "Error: polyline points number exceeds 50!";
+                    }
                     line[tot * 2] = x; // found the first point *on* the lane marking
                     line[tot * 2 + 1] = y;
                     tot ++;                    
@@ -117,7 +131,10 @@ void adjust(int *line, int line_dim1, int line_dim2, float k, float b, float dow
                 else
                 {
                     if (tot * 2 + 1 > line_dim1)
+                    {
+                        return;
                         throw "Error: polyline points number exceeds 50!";
+                    }
                     line[tot * 2] = x; // found the first point *on* the lane marking
                     line[tot * 2 + 1] = y;
                     tot ++;
@@ -128,40 +145,52 @@ void adjust(int *line, int line_dim1, int line_dim2, float k, float b, float dow
                 l = x;
                 r = x;
                 step_l = 0;
-                while (img[y * y_size + l] == 0 && l > 0 && step_l < 10 * downscale)
+                while (img[y * x_size + l] == 0 && l > 0 && step_l < 10 * downscale)
                 {
                     l -= 1;
                     step_l += 1;
-                    if (img[y * y_size + l] == 255)
+                    if (img[y * x_size + l] == 255)
                         break;
                 }
                 step_r = 0;
-                while (img[y * y_size + r] == 0 && r < x_size - 1 && step_r < 10 * downscale)
+                while (img[y * x_size + r] == 0 && r < x_size - 1 && step_r < 10 * downscale)
                 {
                     r += 1;
                     step_r += 1;
-                    if (img[y * y_size + r] == 255)
+                    if (img[y * x_size + r] == 255)
                         break;
                 }
-                if (img[y * y_size + r] == 0 && img[y * y_size + l] == 0) // there is a space here!
+                if (img[y * x_size + r] == 0 && img[y * x_size + l] == 0) // there is a space here!
+                {
+                    // if (tot == 0) // there is not yet any point on the polyline, add this one to it!
+                    // {
+                    //     line[tot * 2] = x;
+                    //     line[tot * 2 + 1] = y;
+                    //     tot ++;
+                    // }
                     continue;
+                }
                 else
                 {
-                    if (img[y * y_size + r] == 255)
+                    if (img[y * x_size + r] == 255)
                         l = r;
                     else
                         r = l;
-                    while (img[y * y_size + l] == 255 && l > 0) l -= 1;
-                    while (img[y * y_size + r] == 255 && r < x_size - 1) r += 1;
+                    while (img[y * x_size + l] == 255 && l > 0) l -= 1;
+                    while (img[y * x_size + r] == 255 && r < x_size - 1) r += 1;
                     x = (l + r) / 2;
                     if (tot * 2 + 1 > line_dim1)
+                    {
+                        return;
                         throw "Error: polyline points number exceeds 50!";
-                    line[tot * 2] = x; // found the first point *on* the lane marking
+                    }
+                    line[tot * 2] = x;
                     line[tot * 2 + 1] = y;
                     tot ++;
                     x0 = x;
                     y0 = y;
                     length = 0;
+                    //printf("x, y: %d %d\n", x, y);
                 }
             }
     }

@@ -18,6 +18,9 @@ using namespace std;
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+//# include <chrono> // for timing, comment when not used!
+//#include <opencv2/cudaarithm.hpp>
+
 namespace LaneDetector
 {
 
@@ -79,9 +82,14 @@ void mcvGetIPM(const CvMat* inImage, CvMat* outImage,
   u = inImage->width;
 
   //get the vanishing point
+  // auto tt0 = chrono::high_resolution_clock::now();
+
   FLOAT_POINT2D vp;
   vp = mcvGetVanishingPoint(cameraInfo);
   vp.y = MAX(0, vp.y);
+  // auto tt1 = chrono::high_resolution_clock::now();
+  // cout << "TIME for VP:" << chrono::duration_cast<chrono::milliseconds>(tt1-tt0).count() << "ms" << endl;
+
   // cout<<"Vanishing Point:(x, y) "<<vp.x<<", "<<vp.y<<endl; // Rui
   //vp.y = 30;
 
@@ -105,6 +113,7 @@ void mcvGetIPM(const CvMat* inImage, CvMat* outImage,
   // {
   //   cout<<"uvlimits: "<<CV_MAT_ELEM(uvLimits, float, 0, z)<<" "<<CV_MAT_ELEM(uvLimits, float, 1, z)<<endl;
   // }
+  //auto t0 = chrono::high_resolution_clock::now();
 
   mcvTransformImage2Ground(&uvLimits, &xyLimits,cameraInfo);
 
@@ -147,15 +156,23 @@ void mcvGetIPM(const CvMat* inImage, CvMat* outImage,
   INT i, j;
   FLOAT_MAT_ELEM_TYPE x, y;
   //fill it with x-y values on the ground plane in world frame
-  for (i=0, y=yfMax-.5*stepRow; i<outRow; i++, y-=stepRow)
-    for (j=0, x=xfMin+.5*stepCol; j<outCol; j++, x+=stepCol)
+  // Rui: only interested in middle parts of the image! 
+  int mini = static_cast<int>(outRow * 0), maxi = static_cast<int>(outRow * 1); // Rui
+  int minj = static_cast<int>(outCol * 0.25), maxj = static_cast<int>(outCol * 0.75); // Rui
+  for (i=mini, y=yfMax-.5*stepRow; i<maxi; i++, y-=stepRow)
+    for (j=minj, x=xfMin*0.75+xfMax*0.25+.5*stepCol; j<maxj; j++, x+=stepCol) // Rui:x=xfMin*0.75+xfMax*0.25. original: x=xfMin
     {
       CV_MAT_ELEM(*xyGrid, FLOAT_MAT_ELEM_TYPE, 0, i*outCol+j) = x;
       CV_MAT_ELEM(*xyGrid, FLOAT_MAT_ELEM_TYPE, 1, i*outCol+j) = y;
     }
+  i = outRow - 1; j = outCol - 1;
   //get their pixel values in image frame
   CvMat *uvGrid = cvCreateMat(2, outRow*outCol, FLOAT_MAT_TYPE);
+  // auto t1 = chrono::high_resolution_clock::now();
   mcvTransformGround2Image(xyGrid, uvGrid, cameraInfo);
+  // auto t2 = chrono::high_resolution_clock::now();
+  // cout << "TIME for MM:" << chrono::duration_cast<chrono::milliseconds>(t2-t1).count() << "ms" << endl;
+  // cout << "TIME for MM:" << chrono::duration_cast<chrono::milliseconds>(t1-t0).count() << "ms" << endl;
   //now loop and find the nearest pixel value for each position
   //that's inside the image, otherwise put it zero
   FLOAT_MAT_ELEM_TYPE ui, vi;
@@ -165,8 +182,8 @@ void mcvGetIPM(const CvMat* inImage, CvMat* outImage,
   // double mean = 0;
   //generic loop to work for both float and int matrix types
   #define MCV_GET_IPM(type) \
-  for (i=0; i<outRow; i++) \
-      for (j=0; j<outCol; j++) \
+  for (i=mini; i<maxi; i++) \
+      for (j=minj; j<maxj; j++) \
       { \
           /*get pixel coordiantes*/ \
           ui = CV_MAT_ELEM(*uvGrid, FLOAT_MAT_ELEM_TYPE, 0, i*outCol+j); \
@@ -192,7 +209,7 @@ void mcvGetIPM(const CvMat* inImage, CvMat* outImage,
                       CV_MAT_ELEM(*inImage, type, y2, x1) * (1-x) * y + \
                       CV_MAT_ELEM(*inImage, type, y2, x2) * x * y;   \
                   CV_MAT_ELEM(*outImage, type, i, j) =  (type)val; \
-  } \
+              } \
               /*nearest-neighbor interpolation*/ \
               else \
                   CV_MAT_ELEM(*outImage, type, i, j) = \
@@ -227,6 +244,7 @@ void mcvGetIPM(const CvMat* inImage, CvMat* outImage,
   cvReleaseMat(&xyLimitsp);
   cvReleaseMat(&xyGrid);
   cvReleaseMat(&uvGrid);
+
 }
 
 
@@ -351,6 +369,8 @@ void mcvTransformGround2Image(const CvMat *inPoints,
   CvMat mat = cvMat(3, 3, CV_32FC1, matp);
   //multiply
   cvMatMul(&mat, inPoints3, inPoints3);
+  //Mat dummy;
+  //gemm(mat, 1, *inPoints3, dummy, 0, *inPoints3); //gpu accel
   //divide by last row of inPoints4
   for (int i=0; i<inPoints->cols; i++)
   {

@@ -23,6 +23,7 @@ using namespace std;
 using namespace cv;
 
 #define UNITY 1
+#include <chrono>
 
 // For good performance, please use the overloaded function parse_config() with UNITY as a parameter
 // to avoid opening the config file all the time.
@@ -301,18 +302,24 @@ scale_xy image_ipm(float *input, int h_in, int w_in, float *output, int h, int w
     CvMat * ipm = cvCreateMat(ipmHeight, ipmWidth, inImage->type); // the picture after IPM will be stored in ipm
     // execute GetIPM, new image is ipm
     list<CvPoint> outPixels;
+
+    //auto t1 = chrono::high_resolution_clock::now();
     LaneDetector::mcvGetIPM(inImage, ipm, &ipmInfo, cameraInfo);
     // LaneDetector::SHOW_IMAGE(ipm, "IPM_image");
     cvConvertScale(ipm, ipm, 255);
 
     output_img = cvarrToMat(ipm);
 
+    int minj = static_cast<int>(output_img.cols * 0.25), maxj = static_cast<int>(output_img.cols * 0.75); // Rui - focus on the central image only
     for (int i = 0; i < output_img.rows; i++)
-        for (int j = 0; j < output_img.cols; j++)
+        for (int j = minj; j < maxj; j++)
         {
             // cout << output_img.at<float>(i, j) << " "; // debug
             output[i * w + j] = (output_img.at<float>(i, j));
         }
+
+    //auto t2 = chrono::high_resolution_clock::now();
+    //cout << "TIME for XXX:" << chrono::duration_cast<chrono::milliseconds>(t2-t1).count() << "ms" << endl;
 
     return get_resize_scale(ipmWidth, ipmHeight, &ipmInfo, cameraInfo);
 }

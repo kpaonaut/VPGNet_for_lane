@@ -12,3 +12,4 @@ tmp = np.array(tmp, dtype = np.int32)
 line = np.array([[1,1,1],[1,1,1]], dtype = np.int32)
 adjust_line.adjust(line, 1, 1, 1, tmp)
 print line
+

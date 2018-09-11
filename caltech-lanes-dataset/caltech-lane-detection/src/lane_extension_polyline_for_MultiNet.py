@@ -14,11 +14,12 @@ import sys
 import time
 from adjust import adjust
 import adjust_line
+import argparse
 
 # define parameters:
 downscale = 1.0 # 0.3 default
 upscale = 1.0 / downscale
-image_size_rescale = 1 # when the image for ipm is 640 * 480, this var is 1 (defined in camera.conf)
+image_size_rescale = 3 # when the image for ipm is 640 * 480, this var is 1 (defined in camera.conf)
                        # when the image for ipm is 160 * 120, this var is 4
                        # remember to modify all parameters in camera.conf to fit this data!
 
@@ -89,6 +90,32 @@ def find_mid(x, y, x1, y1, img):
     y_mid = (l + r) / 2
     return x_mid, y_mid
 
+def generate_camera_conf_file(scale):
+    """
+    Generates camera.conf for IPM.cpp to use as parameters.
+    All parameters are scalable to scale. The baseline picture size when scale=1 is 640*480
+    However, if in IPM.cpp, parse_config(filename, ipmWidth, ipmHeight, cameraInfo, ipmInfo, UNITY) is used,
+    then changing this function will not help change the parameters in IPM.cpp.
+    """
+    with open('camera.conf', 'w') as f:
+        f.write('ipmWidth ' + str(int(640 / scale)) + '\n') # output size!
+        f.write('ipmHeight ' + str(int(480 / scale)) + '\n')
+        f.write('vpPortion 0.04\n') # how far is the image top from vanishing point (bc vp is too far, can't display all)
+        f.write('ipmLeft 0\n') # 85 # pixel range on input to transfer
+        f.write('ipmRight ' + str(int(640 / scale) - 1) + '\n')
+        f.write('ipmTop ' + str(int(50 / scale)) + '\n')
+        f.write('ipmBottom ' + str(int(480 / scale) - 1) + '\n')
+        f.write('ipmInterpolation 0\n')
+        f.write('focalLengthX 50\n') #
+        f.write('focalLengthY 50\n') #
+        f.write('opticalCenterX ' + str(int(320 / scale) - 1) + '\n') #
+        f.write('opticalCenterY ' + str(int(240 / scale) - 1) + '\n') #
+        f.write('cameraHeight 2000\n') # in mm
+        f.write('pitch 0.0\n') # in degrees
+        f.write('yaw  0.0\n')
+        f.write('imageWidth ' + str(int(640 / scale)) + '\n')
+        f.write('imageHeight ' + str(int(480 / scale)))
+
 def preprocess(file, line_type, suppress_output): # 0.006s
     '''pre-process the image of connected lines, final result masked_img'''
 
@@ -96,24 +123,24 @@ def preprocess(file, line_type, suppress_output): # 0.006s
     # the image for adjust() is always 640 * 480
 
     #time0 = time.time()
+    generate_camera_conf_file(image_size_rescale) # change camera configuration for IPM according to image_size_rescale
     tmp = file
     resize_x, resize_y = tmp.shape[1] / 640.0, tmp.shape[0] / 480.0
 
     tmp = cv2.resize(tmp, (640 / image_size_rescale, 480 / image_size_rescale)) # resize to smaller img for fast ipm
     tmp = tmp.astype(dtype = np.float32, copy = False)
-    #time1 = time.time()
+    time1 = time.time() # timing
     ipm_img = np.zeros(tmp.shape[0:2], dtype = np.float32)
     ipm_gnd_converter = IPM.image_ipm(tmp, ipm_img) # ipm'ed image stored in ipm_img
-    #time2 = time.time()
-    if suppress_output is None:
+    time2 = time.time() # timing
+    print "IPM time:", time2 - time1
+    if suppress_output == False:
         cv2.imwrite("debug.png", ipm_img)
  
     ipm_img = ipm_img.astype(dtype = np.uint8, copy = False)
     thresh_img = cv2.resize(ipm_img, (int(downscale * 640), int(downscale * 480))) # image downsample, but will be converted back to gray image again!!!
     ret, thresh_img = cv2.threshold(thresh_img, 30, 255, cv2.THRESH_BINARY)
     
-    if suppress_output is None:
-        cv2.imwrite('thresh_img.png', thresh_img)
     #time3 = time.time()
     #print time1 - time0, time2 - time1, time3 - time2
     # mask the original graph
@@ -133,12 +160,12 @@ def preprocess(file, line_type, suppress_output): # 0.006s
     # pt8 = (0, int(y_size * 1))
 
     # below: a mask of shape 凸
-    pt1 = (0, int(0.1 * y_size)) # specify 8 vertices of the (U-shaped, concave) mask
-    pt2 = (int(0.45 * x_size), int(0.1 * y_size))
+    pt1 = (0, int(0.2 * y_size)) # specify 8 vertices of the (U-shaped, concave) mask
+    pt2 = (int(0.45 * x_size), int(0.2 * y_size))
     pt3 = (pt2[0], int(0.01 * y_size)) # default 0.57
     pt4 = (int(0.55 * x_size), pt3[1])
-    pt5 = (pt4[0], int(0.1 * y_size))
-    pt6 = (x_size - 1, int(0.1 * y_size))
+    pt5 = (pt4[0], int(0.2 * y_size))
+    pt6 = (x_size - 1, int(0.2 * y_size))
     pt7 = (x_size - 1, int(y_size * 1))
     pt8 = (0, y_size - 1)
 
@@ -148,16 +175,16 @@ def preprocess(file, line_type, suppress_output): # 0.006s
         masked_img = cv2.bitwise_and(thresh_img, mask) # apply mask!
     else:
         masked_img = thresh_img # uncomment this if don't wanna use mask!
-    if suppress_output is None:
-        pass # cv2.imwrite('masked_img_' + line_type + '.png', masked_img)
+    if suppress_output == False:
+        cv2.imwrite('thresh_img.png', thresh_img)
 
     return masked_img, resize_x, resize_y, ipm_gnd_converter
 
 def houghlines(masked_img_connected, suppress_output):
     """Performs houghlines algorithm"""
-    scale = 1 # 0.175 # scale the pic to perform houghlinesP, for speed!
+    scale = 0.5 # 0.175 # scale the pic to perform houghlinesP, for speed!
     rho = 1
-    theta = np.pi / 180 / 2 # resolution: 0.5 degree
+    theta = np.pi / 180 # / 2 # resolution: 0.5 degree
     threshold = int(60 * scale * downscale) # the number of votes (voted by random points on the picture)
     min_line_length = int(100 * scale * downscale) # line length
     max_line_gap = 10000 # the gap between points on the line, no limit here 
@@ -174,7 +201,7 @@ def houghlines(masked_img_connected, suppress_output):
             lines[i] = [[int(y1 / scale), int(x1 / scale), int(y2 / scale), int(x2 / scale)]]
 
     # plot the original hughlinesP result!
-    if suppress_output is None:
+    if suppress_output == False:
         hough_img = masked_img_connected.copy()
         cv2.imwrite('houghlines_raw.png', hough_img)
         hough_img = cv2.imread('houghlines_raw.png') # convert gray scale to BGR
@@ -186,7 +213,7 @@ def houghlines(masked_img_connected, suppress_output):
         # hough_img = cv2.resize(hough_img, (0, 0), fx = upscale, fy = upscale)
         cv2.imwrite('houghlines_raw.png', hough_img)
 
-    return lines
+    return lines # lines in 640 * 480 pic
 
 def cluster_lines(masked_img_connected, lines, suppress_output):
     """
@@ -195,7 +222,7 @@ def cluster_lines(masked_img_connected, lines, suppress_output):
     """
     # filter the results, lines too close will be taken as one line!
     # 1. convert the lines to angle-intercept space - NOTE: intercept is on x-axis on the bottom of the image!
-    cluster_threshold = int(2.5 * 3.33 * downscale)
+    cluster_threshold = int(12 * downscale)
     y0 = int(0.6 * masked_img_connected.shape[0])
     n = lines.shape[0]
     y = np.zeros((n, 2), dtype = float) # stores all lines' data
@@ -227,12 +254,12 @@ def cluster_lines(masked_img_connected, lines, suppress_output):
         if not clustered[i]:
             clusters.append([i]) # points not clusterd will be a single cluster
 
-    if suppress_output is None:
+    if suppress_output == False:
         print "cluster representatives: format (intercept, theta)"
 
     ave_lines = []
     for each_cluster in clusters:
-        if suppress_output is None:
+        if suppress_output == False:
             print each_cluster
         sum_intercept = 0
         sum_theta = 0
@@ -244,7 +271,7 @@ def cluster_lines(masked_img_connected, lines, suppress_output):
         ave_theta = sum_theta / tot
         if ave_theta == 0:
             ave_theta = 0.001 # to prevent runtime error
-        if suppress_output is None:
+        if suppress_output == False:
             print ave_intercept, ave_theta
         y1 = y0
         x1 = ave_intercept
@@ -259,7 +286,7 @@ def cluster_lines(masked_img_connected, lines, suppress_output):
         b = - k * ave_intercept + y0
         ave_lines.append((k, b))
 
-    if suppress_output is None:
+    if suppress_output == False:
         print "cluster representatives all printed!"
 
     return ave_lines
@@ -282,7 +309,8 @@ def cluster_directions(ave_lines, suppress_output):
 
     ending = 0
     cluster_threshold = 3 # override the globally defined cluster_threshold for houghlines clustering
-    while ending < z.shape[0] and z[ending, 2] < cluster_threshold: # cluster distance < 10, continue clustering!
+    while ending < z.shape[0]\
+        and z[ending, 2] < cluster_threshold: # cluster distance < 10, continue clustering!
         ending += 1
     ending -= 1 # the last cluster where distance < 10
 
@@ -309,7 +337,7 @@ def cluster_directions(ave_lines, suppress_output):
             max_cluster_size = l
             max_cluster_id = i
 
-    if suppress_output is None:
+    if suppress_output == False:
         print z
         print clusters
     # print max_cluster_id
@@ -360,7 +388,7 @@ def clean_up(orig_img, lines, suppress_output):
 
     for line in lines: # lines format: lines = [line1, line2, line3, ...], linei = np.array([[x, y], [x, y], ...])
         for i in range(len(line) - 1):
-            if suppress_output is None:
+            if suppress_output == False:
                 cv2.line(threshold_img, (int(upscale * line[i][0]), int(upscale * line[i][1])), (int(upscale * line[i + 1][0]), int(upscale * line[i + 1][1])), (0, 0, 255), 1)
             x1, y1 = line[i]
             x2, y2 = line[i + 1]
@@ -434,12 +462,14 @@ def main(filename, dest, do_adjust, suppress_output = None):
     time2 = time.time()
     # threshold + resize
     masked_img_connected, resize_x, resize_y, ipm_gnd_converter = preprocess(file, 'connected', suppress_output) # img: ipm'ed image
-    if suppress_output is None:
+    # masked_img_connected: downscale * (640 * 480)
+    if suppress_output == False:
         orig_img = cv2.resize(file, (640, 480))
         cv2.imwrite("o.png", orig_img)
         orig_img = cv2.imread("o.png")
 
     # initial line extraction: with opencv HoughLines algorithm
+    time25 = time.time()
     lines = houghlines(masked_img_connected, suppress_output)
     time3 = time.time()
 
@@ -453,7 +483,7 @@ def main(filename, dest, do_adjust, suppress_output = None):
         lines = []
 
         for (k, b) in ave_lines:
-            if suppress_output is None:
+            if suppress_output == False:
                 print k, b
 
             if do_adjust:
@@ -462,7 +492,6 @@ def main(filename, dest, do_adjust, suppress_output = None):
                 line = np.zeros((200, 2), dtype = np.int32) # C++ adjust
                 masked_img_connected = np.array(masked_img_connected, dtype = np.int32)
                 adjust_line.adjust(line, k, b, downscale, masked_img_connected) # C++ adjust
-                # line = [(x, y) for x, y in line if (x, y) != (0, 0)] # C++ adjust, convert from numpy array to list of tuples
 
             else:
                 # only use straight line, don't do refinement
@@ -482,7 +511,7 @@ def main(filename, dest, do_adjust, suppress_output = None):
         if lines != []:
 
             # filter through lines, make polyline control points sparser, and convert them to image coordinates
-            if suppress_output is None:
+            if suppress_output == False:
                 lines, npx, npy = clean_up(orig_img, lines, suppress_output)
                 # rescale npx, npy back to original image (not 640*480!) and store in the same shape as lines
                 lines_in_img = scale_back(lines, npx, npy, resize_x, resize_y)
@@ -494,19 +523,23 @@ def main(filename, dest, do_adjust, suppress_output = None):
                 lines = make_sparse(lines) # lines are in image of (640 * 480) * downscale; real ipm is in (640 * 480) / image_size_rescale
                 lines_in_gnd = convert_ipm2gnd(ipm_gnd_converter, lines) # Note: this function also modifies lines[]!
                 # lines format: a list of numpy ndarrays [line1, line2, ...], line1 = np.array( [[x1, y1], [x2, y2], ...] )
-
-            time6 = time.time()
         else:
             lines_in_gnd = []
     
     else:
         lines_in_gnd = []
 
-    #print "readfile time: ", time2 - time1, "preprocess + houghlines: ", time3 - time2, "clustering: ", time4 - time3
+    #print "readfile time: ", time2 - time1, "preprocess:", time25 - time2, "houghlines: ", time3 - time25, "clustering: ", time4 - time3
     #print "adjust in C++: ", time5 - time4, "clean up: ", time6 - time5, "total time: ", time6 - time1
     #print "total time not counting file reading: ", time6 - time2
-    print (time.time() - time2)
-    return lines_in_gnd
+    # print (time.time() - time2)
+    time6 = time.time()
+    return time6 - time2, lines_in_gnd
 
 if __name__ == "__main__":
-    main(sys.argv[1], '.', do_adjust = False, suppress_output = 1)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("filename", help = "specify the path to the input picture")
+    parser.add_argument("-a", "--adjust", help = "adjust along the line to get a polyline instead of the original straight line", action = "store_true")
+    parser.add_argument("-o", "--output", help = "output the pictures, otherwise there is no output", action = "store_true")
+    args = parser.parse_args()
+    main(args.filename, '.', do_adjust = args.adjust, suppress_output = not args.output)

@@ -9,3 +9,9 @@ g++ -c -fPIC adjust_line.cpp
 swig -c++ -python adjust_line.i
 g++ -c -fPIC adjust_line_wrap.cxx  -I/usr/include/python2.7 -I/usr/lib/python2.7
 g++ -shared -Wl,-soname,_adjust_line.so -o _adjust_line.so adjust_line.o adjust_line_wrap.o
+
+g++ adjust_line_for_VPG.cpp -o b
+g++ -c -fPIC adjust_line_for_VPG.cpp
+swig -c++ -python adjust_line_for_VPG.i
+g++ -c -fPIC adjust_line_for_VPG_wrap.cxx  -I/usr/include/python2.7 -I/usr/lib/python2.7
+g++ -shared -Wl,-soname,_adjust_line_for_VPG.so -o _adjust_line_for_VPG.so adjust_line_for_VPG.o adjust_line_for_VPG_wrap.o

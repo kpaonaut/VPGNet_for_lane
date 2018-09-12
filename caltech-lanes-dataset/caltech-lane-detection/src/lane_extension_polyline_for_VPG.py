@@ -131,6 +131,7 @@ def preprocess(file, line_type, suppress_output): # 0.006s
 
     generate_camera_conf_file(IMAGE_SIZE_RESCALE) # change camera configuration for IPM according to IMAGE_SIZE_RESCALE
     tmp = file
+    # tmp = tmp.astype(dtype = np.float32, copy = False)
     resize_x, resize_y = tmp.shape[1] / 640.0, tmp.shape[0] / 480.0
 
     ret, tmp = cv2.threshold(tmp, 200, 255, cv2.THRESH_BINARY)
@@ -153,6 +154,7 @@ def preprocess(file, line_type, suppress_output): # 0.006s
     # tmp = tmp.astype(dtype = np.uint8, copy = False)
     thresh_img = cv2.resize(tmp, (int(DOWNSCALE * 640), int(DOWNSCALE * 480))) # image downsample, but will be converted back to gray image again!!!
     ret, thresh_img = cv2.threshold(thresh_img, 100, 255, cv2.THRESH_BINARY)
+    thresh_img = thresh_img.astype(np.uint8)
     
     #time3 = time.time()
     #print time1 - time0, time2 - time1, time3 - time2
@@ -202,7 +204,7 @@ def houghlines(masked_img_connected, suppress_output):
     theta = np.pi / 180 # / 2 # resolution: 0.5 degree
     threshold = int(150 * scale * DOWNSCALE) # the number of votes (voted by random points on the picture)
     min_line_length = int(80 * scale * DOWNSCALE) # line length
-    max_line_gap = 10000 # the gap between points on the line, no limit here 
+    max_line_gap = 10000 # the gap between points on the line, no limit here
     masked_img_connected = cv2.resize(masked_img_connected, (0, 0), fx = scale, fy = scale)
     lines = cv2.HoughLinesP(masked_img_connected, rho, theta, threshold, np.array([]), min_line_length, max_line_gap) # find the lines
 
@@ -243,8 +245,9 @@ def cluster_lines(masked_img_connected, lines, suppress_output):
     y = np.zeros((n, 2), dtype = float) # stores all lines' data
     for i in range(lines.shape[0]):
         for x1,y1,x2,y2 in lines[i]:
-            theta = ( math.atan2(abs(y2 - y1), (x2 - x1) * abs(y2 - y1) / (y2 - y1)) / np.pi * 180.0)
-            intercept = ((x1 - x2) * (y0 - y1) / (y1 - y2)) + x1
+            eps = 0.1 # prevent division by 0
+            theta = ( math.atan2(abs(y2 - y1), (x2 - x1) * abs(y2 - y1) / (y2 - y1 + eps)) / np.pi * 180.0)
+            intercept = ((x1 - x2) * (y0 - y1) / (y1 - y2 + eps)) + x1
             y[i, :] = [theta * DOWNSCALE, intercept] # intercept: x value at y = y0
 
     # 2. perform clustering
@@ -482,16 +485,7 @@ def convert_ipm2gnd(ipm_gnd_converter, lines):
     return lines
 
 
-def main(filename, do_adjust, suppress_output = None):
-
-    # For the sake of speed and performance, we rescale the image several times.
-    # The input image is not necessarily 640 * 480, but we can use 640 * 480 as the datum for resizing.
-    # We also resize the original pic to 640 * 480 for visualized output for debug.
-    # Second, resize by *DOWNSCALE(can be > 1 or < 1) to (640 * 480)*DOWNSCALE, to perform line adjustment
-    time1 = time.time()
-    file = cv2.imread(filename)
-    file = cv2.cvtColor(file, cv2.COLOR_BGR2GRAY) # convert to gray
-    time2 = time.time()
+def work(file, do_adjust, suppress_output, time1, time2): # the public API
     # threshold + resize
     masked_img_connected, resize_x, resize_y = preprocess(file, 'connected', suppress_output) # img: ipm'ed image
     # masked_img_connected: (640 * 480)*DOWNSCALE
@@ -564,6 +558,21 @@ def main(filename, do_adjust, suppress_output = None):
     #print "total time not counting file reading: ", time6 - time2
 
     return time6 - time2, lines_in_gnd
+
+
+def main(filename, do_adjust, suppress_output=None):
+
+    # For the sake of speed and performance, we rescale the image several times.
+    # The input image is not necessarily 640 * 480, but we can use 640 * 480 as the datum for resizing.
+    # We also resize the original pic to 640 * 480 for visualized output for debug.
+    # Second, resize by *DOWNSCALE(can be > 1 or < 1) to (640 * 480)*DOWNSCALE, to perform line adjustment
+    time1 = time.time()
+    file = cv2.imread(filename)
+    file = cv2.cvtColor(file, cv2.COLOR_BGR2GRAY) # convert to gray
+    time2 = time.time()
+
+    # public API: input grayScale image
+    work(file, do_adjust, suppress_output, time1, time2)
 
 
 if __name__ == "__main__":

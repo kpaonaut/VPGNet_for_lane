@@ -119,7 +119,7 @@ for i in range(60):
             # print maxi
             cv2.rectangle(img, pt1, pt2, color_options(maxi), 2)
             if maxi not in [1, 2, 3, 4]:
-                print "ERROR OCCURRED: an unknown class detected!!!!!!!!!!!!!!!!!!!!!!!!!!"
+                print "ERROR OCCURRED: an unknown class detected!"
 
 cv2.imwrite(workspace_root + "example_classified.png", img) # ISSUE1: the image BGR channel VS RGB
 

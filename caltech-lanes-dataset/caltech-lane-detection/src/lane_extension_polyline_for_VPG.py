@@ -204,7 +204,7 @@ def houghlines(masked_img_connected, suppress_output):
     theta = np.pi / 180 # / 2 # resolution: 0.5 degree
     threshold = int(150 * scale * DOWNSCALE) # the number of votes (voted by random points on the picture)
     min_line_length = int(80 * scale * DOWNSCALE) # line length
-    max_line_gap = 10000 # the gap between points on the line, no limit here
+    max_line_gap = 20 * scale # the gap between points on the line, no limit here
     masked_img_connected = cv2.resize(masked_img_connected, (0, 0), fx = scale, fy = scale)
     lines = cv2.HoughLinesP(masked_img_connected, rho, theta, threshold, np.array([]), min_line_length, max_line_gap) # find the lines
 
@@ -242,6 +242,19 @@ def cluster_lines(masked_img_connected, lines, suppress_output):
     cluster_threshold = int(40 * DOWNSCALE)
     y0 = int(0.7 * masked_img_connected.shape[0])
     n = lines.shape[0]
+
+    if n == 0: # n = 0 or 1, can't do cluster!
+        return []
+    if n == 1:
+        print lines[0]
+        [[x1, y1, x2, y2]] = lines[0]
+        eps = 0.1
+        theta = ( math.atan2(abs(y2 - y1), (x2 - x1) * abs(y2 - y1) / (y2 - y1 + eps)) / np.pi * 180.0)
+        intercept = ((x1 - x2) * (y0 - y1) / (y1 - y2 + eps)) + x1
+        k = math.tan(theta / 180.0 * np.pi)
+        b = - k * intercept + y0
+        return [(k, b)]
+
     y = np.zeros((n, 2), dtype = float) # stores all lines' data
     for i in range(lines.shape[0]):
         for x1,y1,x2,y2 in lines[i]:
@@ -510,7 +523,7 @@ def work(file, do_adjust, suppress_output, time1, time2): # the public API
 
         for (k, b) in ave_lines:
             if not suppress_output:
-                print k, b
+                # print k, b
 
             if do_adjust:
                 # do adjustment (refinement), further adjust all lines to the middle
@@ -551,13 +564,14 @@ def work(file, do_adjust, suppress_output, time1, time2): # the public API
     
     else:
         lines_in_gnd = []
+        lines = []
 
     time6 = time.time()
     #print "readfile time: ", time2 - time1, "preprocess:", time25 - time2, "houghlines: ", time3 - time25, "clustering: ", time4 - time3
     #print "adjust in C++: ", time5 - time4, "clean up: ", time6 - time5, "total time: ", time6 - time1
     #print "total time not counting file reading: ", time6 - time2
 
-    return time6 - time2, lines_in_gnd
+    return time6 - time2, lines_in_gnd, lines
 
 
 def main(filename, do_adjust, suppress_output=None):
@@ -572,7 +586,7 @@ def main(filename, do_adjust, suppress_output=None):
     time2 = time.time()
 
     # public API: input grayScale image
-    work(file, do_adjust, suppress_output, time1, time2)
+    return work(file, do_adjust, suppress_output, time1, time2)
 
 
 if __name__ == "__main__":

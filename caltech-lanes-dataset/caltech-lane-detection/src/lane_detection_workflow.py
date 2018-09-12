@@ -27,6 +27,7 @@ class LaneDetector:
 
     def load_image(self, filename):
         """ load image from filename and store it in VPGNet """
+        self.filename = filename
         self.img = caffe.io.load_image(filename)
         transformer = caffe.io.Transformer({'data': self.net.blobs['data'].data.shape})
         transformer.set_transpose('data', (2, 0, 1))  # move image channels to outermost dimension
@@ -56,15 +57,30 @@ class LaneDetector:
         # cv2.imwrite(workspace_root + 'mask.png', resized_mask)
         # return self.resized_mask
 
-    def post_process(self, t2):
+    def post_process(self, t1, suppress_output=False):
         """
         do post-processing of the mask and extract actual polylines out of it
 
         t: time spent on post-processing
         lines: polyline, format see lane_extension_polyline_for_VPG.py
         """
-        t, lines = pp.work(self.resized_mask, do_adjust=True, suppress_output=False, time1=t2, time2=t2)
-        return t
+        self.t, self.lines_in_gnd, self.lines_in_img = pp.work(self.resized_mask, do_adjust=True, 
+                                                               suppress_output=suppress_output, time1=t1, time2=t1)
+        return self.t
+
+    def visualize(self, num):
+        """
+        visualize the result of post-processing on the original picture
+
+        num: the index of the picture being processed
+        the output is stored in VPG_log/
+        """
+        original_img = cv2.imread(self.filename)
+        original_img = cv2.resize(original_img, (640, 480))
+        for line in self.lines_in_img:
+            for i in range(len(line) - 1):
+                cv2.line(original_img, (line[i][0], line[i][1]), (line[i+1][0], line[i+1][1]), (0, 0, 255), 5)
+        cv2.imwrite('VPG_log/labeled/%d_labeled.png'%num, original_img)
 
 
 def main():
@@ -73,18 +89,19 @@ def main():
     t_sum = 0
     t_pp = 0
     t_net = 0
-    for i in range(200):
-        detector.load_image('../../cordova1/f'+str(i).zfill(5)+'.png')
+    for i in range(245):
+        detector.load_image('../../cordova2/f'+str(i).zfill(5)+'.png')
         t0 = time.time()
         detector.forward()
         mask = detector.extract_mask()
         t1 = time.time()
-        t = detector.post_process(t1)
+        t = detector.post_process(t1, suppress_output=True)
         t_pp += t
         t_sum += time.time() - t0
         t_net += t1 - t0
-        os.system('mv output_log/threshold.png VPG_log/%d.png'%i)
-        os.system('mv output_log/o.png VPG_log/%d_raw.png'%i)
+        detector.visualize(i)
+        # os.system('mv output_log/threshold.png VPG_log/%d.png'%i)
+        # os.system('mv output_log/o.png VPG_log/%d_raw.png'%i)
     print 'total time ', t_sum / 200.0
     print 'VPGNet time ', t_net / 200.0
     print 'post-processing time ', t_pp / 200.0

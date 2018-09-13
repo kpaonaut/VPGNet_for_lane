@@ -20,7 +20,7 @@ import argparse
 # define parameters:
 DOWNSCALE = 1.0 # 0.3 default
 UPSCALE = 1.0 / DOWNSCALE
-IMAGE_SIZE_RESCALE = 3 # when the image for ipm is 640 * 480, this var is 1 (defined in camera.conf)
+IMAGE_SIZE_RESCALE = 1 # when the image for ipm is 640 * 480, this var is 1 (defined in camera.conf)
                        # when the image for ipm is 160 * 120, this var is 4
                        # remember to modify all parameters in camera.conf to fit this data!
 DEST = "./output_log" # where the output pix are stored, can be changed by arg

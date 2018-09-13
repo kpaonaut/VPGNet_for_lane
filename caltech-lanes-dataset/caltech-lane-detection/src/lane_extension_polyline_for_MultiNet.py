@@ -466,7 +466,7 @@ def convert_ipm2gnd(ipm_gnd_converter, lines):
     return lines
 
 
-def main(filename, do_adjust, suppress_output = None):
+def main(filename, do_adjust, suppress_output=False):
 
     # For the sake of speed and performance, we rescale the image several times.
     # The input image is not necessarily 640 * 480, but we can use 640 * 480 as the datum for resizing.
@@ -547,6 +547,7 @@ def main(filename, do_adjust, suppress_output = None):
     # print "total time not counting file reading: ", time6 - time2
     # print (time.time() - time2)
     time6 = time.time()
+
     return time6 - time2, lines_in_gnd
 
 

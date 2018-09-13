@@ -239,14 +239,14 @@ def cluster_lines(masked_img_connected, lines, suppress_output):
     """
     # filter the results, lines too close will be taken as one line!
     # 1. convert the lines to angle-intercept space - NOTE: intercept is on x-axis on the bottom of the image!
-    cluster_threshold = int(40 * DOWNSCALE)
-    y0 = int(0.7 * masked_img_connected.shape[0])
+    cluster_threshold = int(30 * DOWNSCALE)
+    y0 = int(0.5 * masked_img_connected.shape[0]) # the intercept here needs to be carefully chosen!
     n = lines.shape[0]
 
     if n == 0: # n = 0 or 1, can't do cluster!
         return []
     if n == 1:
-        print lines[0]
+        # print lines[0]
         [[x1, y1, x2, y2]] = lines[0]
         eps = 0.1
         theta = ( math.atan2(abs(y2 - y1), (x2 - x1) * abs(y2 - y1) / (y2 - y1 + eps)) / np.pi * 180.0)
@@ -524,6 +524,7 @@ def work(file, do_adjust, suppress_output, time1, time2): # the public API
         for (k, b) in ave_lines:
             if not suppress_output:
                 # print k, b
+                pass
 
             if do_adjust:
                 # do adjustment (refinement), further adjust all lines to the middle

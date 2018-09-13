@@ -6,10 +6,11 @@ import time
 
 import adjust_line
 
-img = cv2.imread("input.png")
-tmp = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-tmp = np.array(tmp, dtype = np.int32)
-line = np.array([[1,1,1],[1,1,1]], dtype = np.int32)
-adjust_line.adjust(line, 1, 1, 1, tmp)
-print line
-
+for i in range(335):
+    img0 = cv2.imread("unity/%d.png"%i)
+    img0 = cv2.resize(img0, (640, 480))
+    img1 = cv2.imread("unity/output/driver_%d.png"%i)
+    img2 = cv2.imread("unity/output/inversed_%d.png"%i)
+    img3 = np.concatenate((img0, img2), axis=1)
+    img4 = np.concatenate((img3, img1), axis=1)
+    cv2.imwrite("unity/output%d.png"%i, img4)

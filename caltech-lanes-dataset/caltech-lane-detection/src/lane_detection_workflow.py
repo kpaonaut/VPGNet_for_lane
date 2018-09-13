@@ -57,7 +57,7 @@ class LaneDetector:
         # cv2.imwrite(workspace_root + 'mask.png', resized_mask)
         # return self.resized_mask
 
-    def post_process(self, t1, suppress_output=False):
+    def post_process(self, t1):
         """
         do post-processing of the mask and extract actual polylines out of it
 
@@ -65,7 +65,7 @@ class LaneDetector:
         lines: polyline, format see lane_extension_polyline_for_VPG.py
         """
         self.t, self.lines_in_gnd, self.lines_in_img = pp.work(self.resized_mask, do_adjust=True, 
-                                                               suppress_output=suppress_output, time1=t1, time2=t1)
+                                                               suppress_output=True, time1=t1, time2=t1)
         return self.t
 
     def visualize(self, num):
@@ -90,21 +90,21 @@ def main():
     t_pp = 0
     t_net = 0
     for i in range(245):
-        detector.load_image('../../cordova2/f'+str(i).zfill(5)+'.png')
+        detector.load_image('../../cordova1/f'+str(i).zfill(5)+'.png')
         t0 = time.time()
         detector.forward()
         mask = detector.extract_mask()
         t1 = time.time()
-        t = detector.post_process(t1, suppress_output=True)
+        t = detector.post_process(t1)
         t_pp += t
         t_sum += time.time() - t0
         t_net += t1 - t0
-        detector.visualize(i)
-        # os.system('mv output_log/threshold.png VPG_log/%d.png'%i)
-        # os.system('mv output_log/o.png VPG_log/%d_raw.png'%i)
-    print 'total time ', t_sum / 200.0
-    print 'VPGNet time ', t_net / 200.0
-    print 'post-processing time ', t_pp / 200.0
+        # detector.visualize(i)
+        # os.system('mv output_log/threshold.png VPG_log/log/%d.png'%i)
+        # os.system('mv output_log/o.png VPG_log/log/%d_raw.png'%i)
+    print 'total time ', t_sum / 245.0
+    print 'VPGNet time ', t_net / 245.0
+    print 'post-processing time ', t_pp / 245.0
 
 if __name__ == '__main__':
     main()

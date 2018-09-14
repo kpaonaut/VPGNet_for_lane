@@ -99,7 +99,7 @@ def main():
         t_pp += t
         t_sum += time.time() - t0
         t_net += t1 - t0
-        # detector.visualize(i)
+        detector.visualize(i)
         # os.system('mv output_log/threshold.png VPG_log/log/%d.png'%i)
         # os.system('mv output_log/o.png VPG_log/log/%d_raw.png'%i)
     print 'total time ', t_sum / 245.0

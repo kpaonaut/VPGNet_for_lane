@@ -14,8 +14,8 @@ def concatenate():
         img2 = cv2.imread("unity/output/inversed_%d.png"%i)
         img3 = np.concatenate((img0, img2), axis=1)
         img4 = np.concatenate((img3, img1), axis=1)
-        img4 = cv2.resize(img4, (640, 160))
-        cv2.imwrite("unity/output%d.png"%i, img4)
+        # img4 = cv2.resize(img4, (640, 160))
+        cv2.imwrite("unity/concatenated/%d.png"%i, img4)
 
 
 def file_organize():
@@ -25,10 +25,10 @@ def file_organize():
     edge_cases = [80,88,93,132,150,262,286]
     os.system('mkdir bad_cases')
     for c in bad_cases:
-        os.system('mv output%d.png bad_cases'%c)
+        os.system('mv %d.png bad_cases'%c)
     os.system('mkdir edge_cases')
     for c in edge_cases:
-        os.system('mv output%d.png edge_cases'%c)
+        os.system('mv %d.png edge_cases'%c)
 
 def video_organize():
     os.chdir('VPG_log/log')
@@ -38,6 +38,6 @@ def video_organize():
 
 
 if __name__ == '__main__':
-    #concatenate()
-    #file_organize()
-    video_organize()
+    file_organize()
+    # concatenate()
+    #video_organize()

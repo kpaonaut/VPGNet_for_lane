@@ -461,12 +461,13 @@ def convert_ipm2gnd(ipm_gnd_converter, lines):
     # then, the coordinates can be transformed to ground coordinates
     for line in lines:
         for i in range(len(line)):
-            line[i][0] = (line[i][0] / DOWNSCALE / IMAGE_SIZE_RESCALE - ipm_gnd_converter.ipmWidth / 2) * ipm_gnd_converter.step_x + (ipm_gnd_converter.xfMax + ipm_gnd_converter.xfMin) / 2.0
-            line[i][1] = (ipm_gnd_converter.ipmHeight - line[i][1] / DOWNSCALE / IMAGE_SIZE_RESCALE) * ipm_gnd_converter.step_y + ipm_gnd_converter.yfMin
+            x = (line[i][0] / DOWNSCALE / IMAGE_SIZE_RESCALE - ipm_gnd_converter.ipmWidth / 2) * ipm_gnd_converter.step_x + (ipm_gnd_converter.xfMax + ipm_gnd_converter.xfMin) / 2.0
+            y = (ipm_gnd_converter.ipmHeight - line[i][1] / DOWNSCALE / IMAGE_SIZE_RESCALE) * ipm_gnd_converter.step_y + ipm_gnd_converter.yfMin
+            line[i] = (x, y)
     return lines
 
 
-def main(filename, do_adjust, suppress_output=False):
+def main(filename, do_adjust=True, suppress_output=False):
 
     # For the sake of speed and performance, we rescale the image several times.
     # The input image is not necessarily 640 * 480, but we can use 640 * 480 as the datum for resizing.
@@ -547,6 +548,7 @@ def main(filename, do_adjust, suppress_output=False):
     # print "total time not counting file reading: ", time6 - time2
     # print (time.time() - time2)
     time6 = time.time()
+    # print lines_in_gnd
 
     return time6 - time2, lines_in_gnd
 

@@ -9,7 +9,7 @@ import cv2
 
 import shelve # store workspace
 
-workspace_root = 'workspace/4/'
+workspace_root = 'workspace/'
 if not os.path.exists(os.path.join(os.getcwd(), workspace_root)):
     os.mkdir(workspace_root)
 

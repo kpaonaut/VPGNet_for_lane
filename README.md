@@ -10,8 +10,8 @@ Real-time lane detection effect:
 <img src="./HDMap.gif" width="1000">
 Lane detection for HD Map. From left to right: output from neural net, lane detection (marked in red lines) in bird's eye view, lane detection (marked in red lines) in driver's perspective.
 
+Output from neural network:
 <img src="./nn.gif" width="400">
-Output from neural network.
 
 
 ## Overview
@@ -55,6 +55,7 @@ This generates the C++-Python interface and allows python to directly call IPM f
 
 If you want to run post-processing for dashed lines (example input pictures are in VPGNet/caltech-lanes-dataset/caltech-lane-detection/src/unity/index.png, can be any size)
 ```python lane_extension_polyline_for_Multinet.py <filename> -a -o -d <directory>```
+
 __**Exemplary Run:**__
 ```
 python lane_extension_polyline_for_Multinet.py unity/1.png -a -o -d output_log
@@ -67,10 +68,12 @@ The flags `-a`, `-o` and `-d` are optional.
 `-d <directory>`: where you want your output to be stored. Use this flag with -o flag. Your results, in the form of png pictures, will be stored under that directory
 
 If you want to run post-processing for connected lines(example input picture is in VPGNet/caltech-lanes-dataset/caltech-lane-detection/src/list, can be any size)
+
 __**Exemplary Run:**__
 ```python lane_extension_polyline_for_VPG.py list/input.png -a -o -d output_log```
 
 If you want to run the entire pipeline for a real-life picture (examples are in `../../cordova1, codova2, washington2`), notice that `washington1` was not used as it was too different from other datasets.
+
 __**Exemplary Run:**__
 ```python lane_detection_workflow.py```
 This will run on a batch of files in `../../cordova1, codova2, washington2`   (`cordova1` by default, but you can change to other datasets.)

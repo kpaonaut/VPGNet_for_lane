@@ -70,12 +70,16 @@ The flags `-a`, `-o` and `-d` are optional.
 If you want to run post-processing for connected lines(example input picture is in VPGNet/caltech-lanes-dataset/caltech-lane-detection/src/list, can be any size)
 
 __**Exemplary Run:**__
-```python lane_extension_polyline_for_VPG.py list/input.png -a -o -d output_log```
+```
+python lane_extension_polyline_for_VPG.py list/input.png -a -o -d output_log
+```
 
 If you want to run the entire pipeline for a real-life picture (examples are in `../../cordova1, codova2, washington2`), notice that `washington1` was not used as it was too different from other datasets.
 
 __**Exemplary Run:**__
-```python lane_detection_workflow.py```
+```
+python lane_detection_workflow.py
+```
 This will run on a batch of files in `../../cordova1, codova2, washington2`   (`cordova1` by default, but you can change to other datasets.)
 The results are stored in `VPG_log/labeled`.
 

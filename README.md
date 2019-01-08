@@ -2,7 +2,17 @@
 
 Rui Wang @ Tsinghua University
 
-This project is partially forked from [VPGNet](https://github.com/SeokjuLee/VPGNet). Also check out [caltech lane detection repo](https://github.com/mohamedadaly/caltech-lane-detection).
+This project is implements lane detection algorithms, with the neural net model forked from [VPGNet](https://github.com/SeokjuLee/VPGNet). Also check out [caltech lane detection repo](https://github.com/mohamedadaly/caltech-lane-detection).
+
+Real-time lane detection effect:
+<img src="./cordova1.gif" width="400">
+
+<img src="./HDMap.gif" width="1000">
+Lane detection for HD Map. From left to right: output from neural net, lane detection (marked in red lines) in bird's eye view, lane detection (marked in red lines) in driver's perspective.
+
+<img src="./nn.gif" width="400">
+Output from neural network.
+
 
 ## Overview
 This project modified the VPGNet implementation, with a focus on lane detection. It also made use of and modified the __inverse perspective mapping__ (IPM) from caltech lane detection.
@@ -17,13 +27,66 @@ The entire repo is tested on Ubuntu 16.04. For other OS, you may need additional
 Note that the installation process might be extremely painful without prior experience with Ubuntu and these open source libraries. Nevertheless, I will try to make the tutorial as clear as possible.
 
 ## Usage
+The package contains two standalone parts that processes MultiNet(dashed line output) and VPGNet(connected line output), respectively. Before usage and modification, there are several points worth noting:
+
+*	The post-processing for dashed lines and connected lines are different.
+*	Both programs are optimized for speed, but MultiNet post processing takes much longer time due to performance concerns.
+*	If you are using a neural network, it is always recommended to output connected lines instead of dashed lines - otherwise you are not taking advantage of neural network. Neural networks are designed such that complicated tasks can be solved. Simply outputting dashed lines means you are almost only making use of
+*	pixel color as the determining factor, and still leave a complicated problem for post-processing since it is very hard to achieve a good result by traditional computer vision algorithms on dashed line extraction, especially when noises are present.
+*	Of course, it would be great if you are designing a neural network that yields a highly abstract output instead of an image/matrix. That would save a ton of time, and even eliminate the demand for this post-processing module all along.
+*	Please test the project on given examples before proceeding - you should understand that this program is not panacea and cannot work for any picture. You will need to customize the many parameters used in this program according to the style of your input. Sometimes, when the input is very different, e.g. the noises are
+*	heavier than what is present in the examples, you will need to introduce additional processing or modify the algorithm. The algorithms are explained detailedly in this wikipage so you can get a grasp of what it is trying to do.
+*	It is highly encouraged to read the source code. The code is well-documented with comments. The various parameters introduced below would make much more sense in code.
+
+All usages in this section are under directory VPGNet/caltech-lanes-dataset/caltech-lane-detection/src
+
+To compile just for IPM, run
+```
+g++ IPM.cpp InversePerspectiveMapping.cc mcv.cc -o a `pkg-config --libs opencv`
+```
+This will generate an executable `a`.
+Name the picture you want to perform IPM on `input.png`, first resize it (optional, depending on your `camera.conf` file and picture size) using `resize.py` and then run `./a` will give you the output in `output.png`.
+
+To compile for entire post-processing, run 
+`source swig.sh`
+
+This generates the C++-Python interface and allows python to directly call IPM functions. To run this, make sure swig is properly installed on your computer.
+(The config file for swig is `IPM.i`, `adjust_line.i`, and `adjust_line_for_VPG.i`)
+
+If you want to run post-processing for dashed lines (example input pictures are in VPGNet/caltech-lanes-dataset/caltech-lane-detection/src/unity/index.png, can be any size)
+```python lane_extension_polyline_for_Multinet.py <filename> -a -o -d <directory>```
+__**Exemplary Run:**__
+```
+python lane_extension_polyline_for_Multinet.py unity/1.png -a -o -d output_log
+```
+This will generate all the results under directory `output_log`.
+
+The flags `-a`, `-o` and `-d` are optional.
+`-a`: whether you want to do line refining adjustment or not. (read the section Algorithm Explained first and you will understand)
+`-o`: whether you want output or not. If you want to test the running time, you should suppress output of results as they consume a lot of additional time, so use this flag.
+`-d <directory>`: where you want your output to be stored. Use this flag with -o flag. Your results, in the form of png pictures, will be stored under that directory
+
+If you want to run post-processing for connected lines(example input picture is in VPGNet/caltech-lanes-dataset/caltech-lane-detection/src/list, can be any size)
+__**Exemplary Run:**__
+```python lane_extension_polyline_for_VPG.py list/input.png -a -o -d output_log```
+
+If you want to run the entire pipeline for a real-life picture (examples are in `../../cordova1, codova2, washington2`), notice that `washington1` was not used as it was too different from other datasets.
+__**Exemplary Run:**__
+```python lane_detection_workflow.py```
+This will run on a batch of files in `../../cordova1, codova2, washington2`   (`cordova1` by default, but you can change to other datasets.)
+The results are stored in `VPG_log/labeled`.
+
+## Speed Performance
+In order to achieve fast performance, I spent a lot of time optimizing the code.
+I truncated the original version of VPGNet and customized it for our needs. The resulted network runs at ~68Hz.
+I rewrote the most time-consuming part of the project in C++ and used swig for the interface between python and C++.
+Also, I optimized the code in IPM (inverse perspective mapping) and reduced redundancy in code to the largest extent.
+The final algorithm runs at 48Hz on an NVIDIA 1070Ti and Intel i5 desktop, which is state-of-the-art result as of September 2018.
 
 ## Training
-
 ## Data Augmentation
-
 ## Test
-The original
+
 
 ## Inverse Perspective Mapping
 There is also a standalone implementation of inverse perspective mapping. Go to `caltech_lanes_dataset/caltech_lane_detection/src/`, and compile it (this is to compile only the IPM, not the entire caltech project!) with
@@ -35,8 +98,9 @@ Here `a` is the executable file. Save the image you want to perform IPM as `inpu
 Note, that you will need to change the camera configuration if you are not using caltech lane dataset. The parameters can be set in `IPM.cpp`, whereafter you will have to recompile before running. You should be able to navigate through and modify the project for yourself with **Sublime Text 3** or equivalent editors (as long as it can link the function definition and/or reference).
 
 ## Post Processing
+The post-processing for this project poses the greatest challenge. From the output (pixelwise) of neural network to a mathematical form of polylines, tons of work is required. I use houghlines algorithm, clustering algorithm, inverse perspective mapping (IPM), and a lot of filteing and adjustment to obtain the final results.
 
-## ::::::::::::::::  Supplementary  ::::::::::::::::::
+## ::::::::::::::::  Supplementary Information ::::::::::::::::::
 **Below is the original readme file from VPGNet:**
 ## [VPGNet: Vanishing Point Guided Network for Lane and Road Marking Detection and Recognition]
 

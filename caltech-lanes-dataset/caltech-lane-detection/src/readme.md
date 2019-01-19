@@ -1,4 +1,4 @@
-Author Rui Wang, Tsinghua University, @ Aptiv, Mountain View, CA, 08/2018
+Author Rui Wang, Tsinghua University 08/2018
 This package implements inverse perspective mapping (IPM) and general post-processing for lane lines detection.
 
 Package Usage:

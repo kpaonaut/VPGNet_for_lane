@@ -2,20 +2,23 @@
 
 Rui Wang @ Tsinghua University
 
-This project is implements lane detection algorithms, with the neural net model forked from [VPGNet](https://github.com/SeokjuLee/VPGNet). Also check out [caltech lane detection repo](https://github.com/mohamedadaly/caltech-lane-detection).
+This project implements lane detection algorithms, with the neural net model forked from [VPGNet](https://github.com/SeokjuLee/VPGNet). Also check out [caltech lane detection repo](https://github.com/mohamedadaly/caltech-lane-detection).
 
-Real-time lane detection effect:
 <img src="./cordova1.gif" width="400">
 
+Real-time lane detection effect
+
 <img src="./HDMap.gif" width="1000">
+
 Lane detection for HD Map. From left to right: output from neural net, lane detection (marked in red lines) in bird's eye view, lane detection (marked in red lines) in driver's perspective.
 
-Output from neural network:
 <img src="./nn.gif" width="400">
+
+Output from neural network
 
 
 ## Overview
-This project modified the VPGNet implementation, with a focus on lane detection. It also made use of and modified the __inverse perspective mapping__ (IPM) from caltech lane detection.
+This project modifies the VPGNet implementation, with a focus on lane detection. It also made use of and modifies the __inverse perspective mapping__ (IPM) from caltech lane detection.
 
 This project aims to develop a clearer document for VPGNet usage, providing a clean interface for lane detection. Hopefully with this document you'll be able to __actually__ run VPGNet without too much pain. It also implements some of the post-processing techniques that are not provided in the original repo. Please check out their original repo referenced above, and cite their paper if it helped your research.
 
@@ -38,7 +41,7 @@ The package contains two standalone parts that processes MultiNet(dashed line ou
 *	heavier than what is present in the examples, you will need to introduce additional processing or modify the algorithm. The algorithms are explained detailedly in this wikipage so you can get a grasp of what it is trying to do.
 *	It is highly encouraged to read the source code. The code is well-documented with comments. The various parameters introduced below would make much more sense in code.
 
-All usages in this section are under directory VPGNet/caltech-lanes-dataset/caltech-lane-detection/src
+All usages in this section are under directory `VPGNet/caltech-lanes-dataset/caltech-lane-detection/src`
 
 To compile just for IPM, run
 ```
@@ -91,7 +94,11 @@ Also, I optimized the code in IPM (inverse perspective mapping) and reduced redu
 The final algorithm runs at 48Hz on an NVIDIA 1070Ti and Intel i5 desktop, which is state-of-the-art result as of September 2018.
 
 ## Training
+
 ## Data Augmentation
+
+I flipped the images from left to right for data augmentation.
+
 ## Test
 
 
